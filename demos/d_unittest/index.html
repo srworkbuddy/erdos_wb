@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单元测试 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1d1d1f; line-height: 1.6; }
+  .container { max-width: 960px; margin: 40px auto; padding: 0 24px; }
+
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #1d1d1f; }
+  .subtitle { font-size: 14px; color: #86868b; margin-bottom: 32px; }
+
+  /* 代码卡片 */
+  .code-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5ea;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5ea;
+    font-size: 13px;
+    color: #86868b;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.75;
+    overflow-x: auto;
+    background: #fff;
+  }
+  .kw { color: #c62828; font-weight: 600; }
+  .fn { color: #1565c0; }
+  .str { color: #2e7d32; }
+  .cm { color: #90a4ae; font-style: italic; }
+  .num { color: #e65100; }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-top: 1px solid #e5e5ea;
+    background: #fafafa;
+  }
+  .status-text { font-size: 13px; color: #86868b; }
+  .status-text.active { color: #007aff; }
+  .status-text.done { color: #34c759; }
+  .btn-gen {
+    padding: 8px 22px;
+    border-radius: 8px;
+    border: none;
+    background: #007aff;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-gen:hover { background: #0062cc; }
+  .btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 结果 */
+  #results { display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* 汇总卡片 */
+  .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .summary-card {
+    background: #fff; border-radius: 10px; padding: 16px; text-align: center;
+    border: 1px solid #e5e5ea;
+  }
+  .summary-card .num { font-size: 28px; font-weight: 700; line-height: 1.2; }
+  .summary-card .label { font-size: 12px; color: #86868b; margin-top: 4px; }
+  .card-blue .num { color: #007aff; } .card-blue { background: #ecf5ff; border-color: #d9ecff; }
+  .card-green .num { color: #34c759; } .card-green { background: #f0f9eb; border-color: #e1f3d8; }
+  .card-orange .num { color: #e6a23c; } .card-orange { background: #fdf6ec; border-color: #faecd8; }
+  .card-purple .num { color: #993556; } .card-purple { background: #fef0f0; border-color: #fde2e2; }
+
+  /* 结果区块 */
+  .result-section {
+    background: #fff; border-radius: 12px; border: 1px solid #e5e5ea;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .result-header {
+    padding: 14px 20px; border-bottom: 1px solid #e5e5ea;
+    font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+  }
+  .result-body { padding: 20px 22px; }
+
+  /* 测试代码块 */
+  .test-code-block {
+    background: #1e1e2e; border-radius: 10px; padding: 18px 20px;
+    overflow-x: auto;
+  }
+  .test-code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12.5px; line-height: 1.75; color: #cdd6f4; white-space: pre-wrap; word-break: break-all;
+  }
+  /* 语法高亮 - 暗色主题 */
+  .tc-kw { color: #cba6f7; font-weight: 600; }
+  .tc-fn { color: #89b4fa; }
+  .tc-str { color: #a6e3a1; }
+  .tc-num { color: #fab387; }
+  .tc-cm { color: #6c7086; font-style: italic; }
+  .tc-type { color: #f9e2af; }
+  .tc-const { color: #fab387; }
+  .tc-mock { color: #f38ba8; }
+
+  /* 分组标签 */
+  .method-tag {
+    display: inline-block; padding: 3px 11px; border-radius: 12px;
+    font-size: 11.5px; font-weight: 600; margin-right: 8px; margin-bottom: 6px;
+  }
+  .tag-getUser { background: #ecf5ff; color: #007aff; }
+  .tag-update { background: #fef0f0; color: #dc3545; }
+  .tag-display { background: #f0f9eb; color: #67c23a; }
+
+  /* 用例列表 */
+  .case-list { list-style: none; padding: 0; }
+  .case-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px dashed #eee; font-size: 13.5px;
+  }
+  .case-item:last-child { border-bottom: none; }
+  .case-icon {
+    width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px;
+  }
+  .icon-normal { background: #f0f9eb; color: #67c23a; }
+  .icon-edge { background: #fdf6ec; color: #e6a23c; }
+  .icon-error { background: #fef0f0; color: #dc3545; }
+  .case-desc { color: #444; flex: 1; }
+  .case-method { font-size: 11px; color: #999; white-space: nowrap; }
+
+  /* 说明文字 */
+  .note-box {
+    background: #f8f9fa; border-radius: 8px; padding: 14px 16px;
+    margin-top: 14px; font-size: 13.5px; color: #555; line-height: 1.8;
+    border-left: 3px solid #007aff;
+  }
+  .note-box strong { color: #333; }
+
+  /* 结论 */
+  .conclusion-box {
+    background: linear-gradient(135deg, #f0f9eb 0%, #ecf5ff 100%);
+    border-radius: 10px; padding: 20px 24px; border: 1px solid #d9ecff;
+  }
+  .conclusion-box h3 { font-size: 15px; margin-bottom: 10px; color: #303133; }
+  .conclusion-box p { font-size: 14px; color: #606266; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>单元测试</h1>
+<p class="subtitle">自动生成单元测试，符合逻辑场景</p>
+
+<!-- 源代码 -->
+<div class="code-card">
+  <div class="code-header">
+    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    <span>models/UserService.ts</span>
+  </div>
+  <pre><code><span class="kw">import</span> { db } <span class="kw">from</span> <span class="str">'../db'</span>;
+<span class="kw">import</span> { sendEmail } <span class="kw">from</span> <span class="str">'../lib/email'</span>;
+
+<span class="kw">export class</span> <span class="fn">UserService</span> {
+  <span class="kw">async</span> <span class="fn">getUserById</span>(id: <span class="type">number</span>) {
+    <span class="kw">if</span> (!id || id &lt; <span class="num">1</span>) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'Invalid user ID'</span>);
+    <span class="kw">const</span> user = <span class="kw">await</span> db.<span class="fn">query</span>(<span class="str">'SELECT * FROM users WHERE id = ?'</span>, [id]);
+    <span class="kw">if</span> (!user) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'User not found'</span>);
+    <span class="kw">return</span> user;
+  }
+
+  <span class="kw">async</span> <span class="fn">updateUser</span>(id: <span class="type">number</span>, data: <span class="type">Partial</span>&lt;<span class="type">User</span>&gt;) {
+    <span class="kw">const</span> existing = <span class="kw">await this</span>.<span class="fn">getUserById</span>(id);
+    <span class="kw">if</span> (data.email && data.email !== existing.email) {
+      <span class="kw">await</span> <span class="fn">sendEmail</span>(data.email, <span class="str">'邮箱变更通知'</span>);
+    }
+    <span class="kw">return await</span> db.<span class="fn">query</span>(<span class="str">'UPDATE users SET ? WHERE id = ?'</span>, [data, id]);
+  }
+
+  <span class="fn">getDisplayName</span>(user: <span class="type">User</span>): <span class="type">string</span> {
+    <span class="kw">if</span> (user.nickname) <span class="kw">return</span> user.nickname;
+    <span class="kw">if</span> (user.firstName && user.lastName) {
+      <span class="kw">return</span> <span class="str">\`${user.firstName} ${user.lastName}\`</span>;
+    }
+    <span class="kw">return</span> user.email.<span class="fn">split</span>(<span class="str">'@'</span>)[<span class="num">0</span>];
+  }
+}</code></pre>
+  <div class="action-bar">
+    <span class="status-text" id="status">就绪，等待分析</span>
+    <button class="btn-gen" id="btnRun" onclick="runGenerate()">生成单元测试</button>
+  </div>
+</div>
+
+<!-- 结果 -->
+<div id="results">
+
+  <!-- 汇总卡片 -->
+  <div class="summary-cards">
+    <div class="summary-card card-blue"><div class="num" id="n-total">14</div><div class="label">用例总数</div></div>
+    <div class="summary-card card-green"><div class="num" id="n-normal">5</div><div class="label">正常路径</div></div>
+    <div class="summary-card card-orange"><div class="num" id="n-edge">5</div><div class="label">边界场景</div></div>
+    <div class="summary-card card-purple"><div class="num" id="n-err">4</div><div class="label">异常路径</div></div>
+  </div>
+
+  <!-- 生成的测试代码 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      UserService.test.ts — 自动生成的测试代码
+    </div>
+    <div class="result-body">
+      <div style="margin-bottom: 12px;">
+        <span class="method-tag tag-getUser">getUserById (5)</span>
+        <span class="method-tag tag-update">updateUser (4)</span>
+        <span class="method-tag tag-display">getDisplayName (5)</span>
+      </div>
+      <div class="test-code-block">
+        <div class="test-code"><span class="tc-cm">// UserService.test.ts — 由 AI 自动生成</span>
+<span class="tc-kw">import</span> { describe, it, expect, vi, beforeEach } <span class="tc-kw">from</span> <span class="tc-str">'vitest'</span>;
+<span class="tc-kw">import</span> { UserService } <span class="tc-kw">from</span> <span class="tc-str">'./UserService'</span>;
+
+<span class="tc-const">const</span> mockDb = { query: vi.<span class="tc-fn">fn</span>() };
+<span class="tc-const">const</span> mockSendEmail = vi.<span class="tc-fn">fn</span>();
+
+vi.<span class="tc-mock">mock</span>(<span class="tc-str">'../db'</span>, () => ({ db: mockDb }));
+vi.<span class="tc-mock">mock</span>(<span class="tc-str">'../lib/email'</span>, () => ({ sendEmail: mockSendEmail }));
+
+<span class="tc-kw">let</span> service: <span class="tc-type">UserService</span>;
+
+<span class="tc-fn">beforeEach</span>(() => {
+  service = <span class="tc-kw">new</span> <span class="tc-type">UserService</span>();
+  vi.<span class="tc-fn">clearAllMocks</span>();
+});
+
+<span class="tc-fn">describe</span>(<span class="tc-str">'UserService.getUserById'</span>, () => {
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'正常：根据 ID 返回用户数据'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-const">const</span> fakeUser = { id: <span class="tc-num">1</span>, name: <span class="tc-str">'张三'</span>, email: <span class="tc-str">'zhang@example.com'</span> };
+    mockDb.query.<span class="tc-fn">mockResolvedValue</span>(fakeUser);
+
+    <span class="tc-const">const</span> result = <span class="tc-kw">await</span> service.<span class="tc-fn">getUserById</span>(<span class="tc-num">1</span>);
+
+    <span class="tc-fn">expect</span>(result).<span class="tc-fn">toEqual</span>(fakeUser);
+    <span class="tc-fn">expect</span>(mockDb.query).<span class="tc-fn">toHaveBeenCalledWith</span>(
+      <span class="tc-str">'SELECT * FROM users WHERE id = ?'</span>, [<span class="tc-num">1</span>]
+    );
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'异常：ID 为 0 时抛出错误'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-kw">await</span> <span class="tc-fn">expect</span>(service.<span class="tc-fn">getUserById</span>(<span class="tc-num">0</span>)).rejects.<span class="tc-fn">toThrow</span>(<span class="tc-str">'Invalid user ID'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'异常：ID 为负数时抛出错误'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-kw">await</span> <span class="tc-fn">expect</span>(service.<span class="tc-fn">getUserById</span>(<span class="tc-num">-1</span>)).rejects.<span class="tc-fn">toThrow</span>(<span class="tc-str">'Invalid user ID'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'异常：ID 为 undefined 时抛出错误'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-kw">await</span> <span class="tc-fn">expect</span>(
+      service.<span class="tc-fn">getUserById</span>(<span class="tc-kw">undefined</span> <span class="tc-kw">as any</span>)
+    ).rejects.<span class="tc-fn">toThrow</span>(<span class="tc-str">'Invalid user ID'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'异常：用户不存在时抛出 User not found'</span>, <span class="tc-kw">async</span> () => {
+    mockDb.query.<span class="tc-fn">mockResolvedValue</span>(<span class="tc-kw">null</span>);
+    <span class="tc-kw">await</span> <span class="tc-fn">expect</span>(service.<span class="tc-fn">getUserById</span>(<span class="tc-num">999</span>)).rejects.<span class="tc-fn">toThrow</span>(<span class="tc-str">'User not found'</span>);
+  });
+});
+
+<span class="tc-fn">describe</span>(<span class="tc-str">'UserService.updateUser'</span>, () => {
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'正常：更新非邮箱字段时不发送邮件'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-const">const</span> existing = { id: <span class="tc-num">1</span>, email: <span class="tc-str">'old@mail.com'</span>, name: <span class="tc-str">'张三'</span> };
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>(existing);
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>({ affectedRows: <span class="tc-num">1</span> });
+
+    <span class="tc-kw">await</span> service.<span class="tc-fn">updateUser</span>(<span class="tc-num">1</span>, { name: <span class="tc-str">'李四'</span> });
+
+    <span class="tc-fn">expect</span>(mockSendEmail).<span class="tc-fn">not</span>.<span class="tc-fn">toHaveBeenCalled</span>();
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'正常：变更邮箱时发送通知邮件'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-const">const</span> existing = { id: <span class="tc-num">1</span>, email: <span class="tc-str">'old@mail.com'</span>, name: <span class="tc-str">'张三'</span> };
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>(existing);
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>({ affectedRows: <span class="tc-num">1</span> });
+    mockSendEmail.<span class="tc-fn">mockResolvedValue</span>(<span class="tc-kw">undefined</span>);
+
+    <span class="tc-kw">await</span> service.<span class="tc-fn">updateUser</span>(<span class="tc-num">1</span>, { email: <span class="tc-str">'new@mail.com'</span> });
+
+    <span class="tc-fn">expect</span>(mockSendEmail).<span class="tc-fn">toHaveBeenCalledTimes</span>(<span class="tc-num">1</span>);
+    <span class="tc-fn">expect</span>(mockSendEmail).<span class="tc-fn">toHaveBeenCalledWith</span>(
+      <span class="tc-str">'new@mail.com'</span>, <span class="tc-str">'邮箱变更通知'</span>
+    );
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'边界：邮箱未变时不发邮件'</span>, <span class="tc-kw">async</span> () => {
+    <span class="tc-const">const</span> existing = { id: <span class="tc-num">1</span>, email: <span class="tc-str">'same@mail.com'</span> };
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>(existing);
+    mockDb.query.<span class="tc-fn">mockResolvedValueOnce</span>({ affectedRows: <span class="tc-num">1</span> });
+
+    <span class="tc-kw">await</span> service.<span class="tc-fn">updateUser</span>(<span class="tc-num">1</span>, { email: <span class="tc-str">'same@mail.com'</span> });
+
+    <span class="tc-fn">expect</span>(mockSendEmail).<span class="tc-fn">not</span>.<span class="tc-fn">toHaveBeenCalled</span>();
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'异常：更新的用户不存在时抛错'</span>, <span class="tc-kw">async</span> () => {
+    mockDb.query.<span class="tc-fn">mockRejectedValue</span>(<span class="tc-kw">new</span> <span class="tc-fn">Error</span>(<span class="tc-str">'User not found'</span>));
+
+    <span class="tc-kw">await</span> <span class="tc-fn">expect</span>(
+      service.<span class="tc-fn">updateUser</span>(<span class="tc-num">999</span>, { name: <span class="tc-str">'xxx'</span> })
+    ).rejects.<span class="tc-fn">toThrow</span>(<span class="tc-str">'User not found'</span>);
+  });
+});
+
+<span class="tc-fn">describe</span>(<span class="tc-str">'UserService.getDisplayName'</span>, () => {
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'优先返回 nickname'</span>, () => {
+    <span class="tc-const">const</span> result = service.<span class="tc-fn">getDisplayName</span>({
+      nickname: <span class="tc-str">'小明'</span>,
+      firstName: <span class="tc-str">'张'</span>, lastName: <span class="tc-str">'三'</span>,
+      email: <span class="tc-str">'zhang@test.com'</span>
+    });
+    <span class="tc-fn">expect</span>(result).<span class="tc-fn">toBe</span>(<span class="tc-str">'小明'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'无 nickname 时拼接 firstName + lastName'</span>, () => {
+    <span class="tc-const">const</span> result = service.<span class="tc-fn">getDisplayName</span>({
+      firstName: <span class="tc-str">'张'</span>, lastName: <span class="tc-str">'三'</span>,
+      email: <span class="tc-str">'zhang@test.com'</span>
+    });
+    <span class="tc-fn">expect</span>(result).<span class="tc-fn">toBe</span>(<span class="tc-str">'张 三'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'有 firstName 但无 lastName 时走兜底逻辑'</span>, () => {
+    <span class="tc-const">const</span> result = service.<span class="tc-fn">getDisplayName</span>({
+      firstName: <span class="tc-str">'张'</span>, email: <span class="tc-str">'zhang@test.com'</span>
+    });
+    <span class="tc-fn">expect</span>(result).<span class="tc-fn">toBe</span>(<span class="tc-str">'zhang'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'nickname 和姓名都没有时取 email 前缀'</span>, () => {
+    <span class="tc-const">const</span> result = service.<span class="tc-fn">getDisplayName</span>({
+      email: <span class="tc-str">'hello@world.com'</span>
+    });
+    <span class="tc-fn">expect</span>(result).<span class="tc-fn">toBe</span>(<span class="tc-str">'hello'</span>);
+  });
+
+  <span class="tc-fn">it</span>(<span class="tc-str">'所有字段为空对象时返回 undefined.split 报错防护'</span>, () => {
+    <span class="tc-comment">// 注意：空对象调用 split 会报错，这是源码的一个潜在 Bug</span>
+    <span class="tc-fn">expect</span>(() => service.<span class="tc-fn">getDisplayName</span>({} <span class="tc-kw">as any</span>)).<span class="tc-fn">toThrow</span>();
+  });
+});</div>
+      </div>
+
+      <div class="note-box">
+        <strong>Mock 配置说明：</strong>使用 vi.mock() 对 db 和 sendEmail 进行模块级 Mock，在 beforeEach 中重置状态确保用例间隔离。<br>
+        <strong>断言策略：</strong>正常路径使用 toEqual/toBe 精确匹配；异常路径使用 toThrow 验证错误消息；Mock 调用使用 toHaveBeenCalledWith 验证参数正确性。
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例清单 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#67c23a" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      用例覆盖清单（14 条）
+    </div>
+    <div class="result-body">
+      <ul class="case-list">
+        <li class="case-item"><span class="case-icon icon-normal">&#10003;</span><span class="case-desc">根据 ID 正常返回用户数据</span><span class="case-method">getUserById</span></li>
+        <li class="case-item"><span class="case-icon icon-error">&#x2717;</span><span class="case-desc">ID 为 0 / 负数 / undefined 时抛出 Invalid user ID</span><span class="case-method">getUserById</span></li>
+        <li class="case-item"><span class="case-icon icon-error">&#x2717;</span><span class="case-desc">用户不存在时抛出 User not found</span><span class="case-method">getUserById</span></li>
+        <li class="case-item"><span class="case-icon icon-normal">&#10003;</span><span class="case-desc">更新非邮箱字段不触发邮件</span><span class="case-method">updateUser</span></li>
+        <li class="case-item"><span class="case-icon icon-normal">&#10003;</span><span class="case-desc">邮箱变更时发送通知且参数正确</span><span class="case-method">updateUser</span></li>
+        <li class="case-item"><span class="case-icon icon-edge">&#9674;</span><span class="case-desc">邮箱值未变时不重复发送</span><span class="case-method">updateUser</span></li>
+        <li class="case-item"><span class="case-icon icon-error">&#x2717;</span><span class="case-desc">目标用户不存在时向上抛出错误</span><span class="case-method">updateUser</span></li>
+        <li class="case-item"><span class="case-icon icon-normal">&#10003;</span><span class="case-desc">有 nickname 时直接返回</span><span class="case-method">getDisplayName</span></li>
+        <li class="case-item"><span class="case-icon icon-normal">&#10003;</span><span class="case-desc">无 nickname 时拼接 firstName + lastName</span><span class="case-method">getDisplayName</span></li>
+        <li class="case-item"><span class="case-icon icon-edge">&#9674;</span><span class="case-desc">只有 firstName 无 lastName 时走兜底</span><span class="case-method">getDisplayName</span></li>
+        <li class="case-item"><span class="case-icon icon-edge">&#9674;</span><span class="case-desc">无昵称无姓名时取 email @ 前缀</span><span class="case-method">getDisplayName</span></li>
+        <li class="case-item"><span class="case-icon icon-error">&#x2717;</span><span class="case-desc">空对象导致 split 报错（发现潜在 Bug）</span><span class="case-method">getDisplayName</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 结论 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#67c23a" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01"/></svg>
+      生成结论
+    </div>
+    <div class="result-body">
+      <div class="conclusion-box">
+        <h3>覆盖率分析</h3>
+        <p><strong>行覆盖率目标：</strong>100%（全部分支均已覆盖）<br>
+           <strong>分支覆盖：</strong>getUserById 的 if/else × 3 + updateUser 的条件判断 × 2 + getDisplayName 的优先级链 × 3<br>
+           <strong>额外发现：</strong>getDisplayName 在传入空对象时会因 email 为 undefined 触发运行时报错，建议增加防御性检查。</p>
+        <h3 style="margin-top: 16px;">运行方式</h3>
+        <p>安装依赖后直接执行：<br>
+           <code style="background:#eee;padding:2px 6px;border-radius:4px;font-size:13px;">npx vitest run UserService.test.ts</code></p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#results -->
+
+</div>
+
+<script>var running=false;function runGenerate(){if(running)return;running=true;var btn=document.getElementById('btnRun');var status=document.getElementById('status');var results=document.getElementById('results');btn.disabled=true;results.style.display='none';var phases=['正在分析源码结构与依赖...','正在识别分支逻辑与边界条件...','正在生成 Mock 配置...','正在编写测试用例...'];var i=0;status.className='status-text active';var timer=setInterval(function(){if(i<phases.length){status.textContent=phases[i];i++;}else{clearInterval(timer);showResults();}},550);}function showResults(){var status=document.getElementById('status');var btn=document.getElementById('btnRun');var results=document.getElementById('results');status.textContent='生成完成 — 14 条测试用例已就绪';status.className='status-text done';btn.disabled=false;btn.textContent='重新生成';running=false;results.style.display='block';setTimeout(function(){results.scrollIntoView({behavior:'smooth',block:'start'});},100);}</script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkBuddy × 微信小程序 — AI 开发上线全流程方案</title>
+<style>
+  :root {
+    --wb: #0066ff;
+    --wb-light: #e6f0ff;
+    --wb-dark: #0044cc;
+    --primary: #ff6b35;
+    --primary-light: #fff5f0;
+    --bg: #f7f8fa;
+    --card: #fff;
+    --text: #1a1a2e;
+    --text-2: #555;
+    --text-3: #999;
+    --border: #e8e8e8;
+    --code-bg: #1e1e2e;
+    --green: #00b894;
+    --purple: #6c5ce7;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC',sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+
+  /* ===== 导航 ===== */
+  .nav { position:sticky; top:0; z-index:100; background:rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 32px; height:60px; }
+  .nav-logo { font-weight:800; font-size:16px; display:flex; align-items:center; gap:8px; }
+  .nav-logo .dot { width:10px; height:10px; background:var(--wb); border-radius:50%; }
+  .nav-links { display:flex; gap:28px; }
+  .nav-links a { text-decoration:none; color:var(--text-2); font-size:14px; transition:color .2s; }
+  .nav-links a:hover { color:var(--wb); }
+
+  /* ===== Hero ===== */
+  .hero { background:linear-gradient(135deg,#0066ff 0%,#0099ff 100%); color:#fff; padding:72px 32px 80px; text-align:center; position:relative; overflow:hidden; }
+  .hero::after { content:''; position:absolute; bottom:-40px; left:0; right:0; height:80px; background:var(--bg); border-radius:50% 50% 0 0; }
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); padding:6px 18px; border-radius:20px; font-size:13px; margin-bottom:20px; }
+  .hero h1 { font-size:38px; margin-bottom:14px; letter-spacing:-0.5px; }
+  .hero h1 .highlight { background:linear-gradient(90deg,#ffd700,#ff9a3c); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero p { font-size:16px; opacity:.92; max-width:620px; margin:0 auto 28px; }
+  .hero-stats { display:flex; justify-content:center; gap:48px; }
+  .hero-stat .num { font-size:34px; font-weight:800; }
+  .hero-stat .label { font-size:13px; opacity:.85; }
+
+  /* ===== 通用 ===== */
+  .wrap { max-width:920px; margin:0 auto; padding:0 24px; }
+  .section { padding:64px 0; }
+  .section-tag { display:inline-block; background:var(--wb-light); color:var(--wb); font-size:13px; font-weight:600; padding:5px 16px; border-radius:20px; margin-bottom:14px; }
+  .section h2 { font-size:30px; margin-bottom:10px; }
+  .section .sub { font-size:15px; color:var(--text-3); margin-bottom:36px; }
+
+  /* ===== 什么是 WorkBuddy ===== */
+  .wb-intro { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
+  .wb-intro-text h3 { font-size:22px; margin-bottom:14px; }
+  .wb-intro-text p { font-size:15px; color:var(--text-2); margin-bottom:14px; }
+  .wb-intro-text ul { list-style:none; padding:0; }
+  .wb-intro-text li { font-size:14px; color:var(--text-2); padding:6px 0 6px 26px; position:relative; }
+  .wb-intro-text li::before { content:'✓'; position:absolute; left:0; color:var(--green); font-weight:bold; }
+  .wb-chat { background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .wb-chat-title { font-size:13px; color:var(--text-3); margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+  .chat-msg { padding:10px 14px; border-radius:12px; margin-bottom:10px; font-size:13px; max-width:85%; }
+  .chat-user { background:var(--wb); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+  .chat-bot { background:#f0f2f5; color:var(--text); margin-right:auto; border-bottom-left-radius:4px; }
+  .chat-bot .code { background:var(--code-bg); color:#a6e3a1; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:12px; }
+
+  /* ===== 流程时间线 ===== */
+  .flow-timeline { position:relative; padding-left:40px; }
+  .flow-timeline::before { content:''; position:absolute; left:15px; top:8px; bottom:8px; width:2px; background:linear-gradient(180deg,var(--wb),var(--primary),var(--green)); }
+  .flow-step { position:relative; margin-bottom:36px; }
+  .flow-step:last-child { margin-bottom:0; }
+  .flow-dot { position:absolute; left:-33px; top:0; width:32px; height:32px; border-radius:50%; background:#fff; border:3px solid var(--wb); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; color:var(--wb); z-index:2; }
+  .flow-step.s2 .flow-dot { border-color:var(--primary); color:var(--primary); }
+  .flow-step.s3 .flow-dot { border-color:#9b59b6; color:#9b59b6; }
+  .flow-step.s4 .flow-dot { border-color:#f39c12; color:#f39c12; }
+  .flow-step.s5 .flow-dot { border-color:var(--green); color:var(--green); }
+  .flow-card { background:var(--card); border-radius:var(--radius); padding:24px 28px; border:1px solid var(--border); box-shadow:var(--shadow); }
+  .flow-card h4 { font-size:18px; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .flow-card .flow-desc { font-size:14px; color:var(--text-2); margin-bottom:14px; }
+  .flow-card .flow-output { background:var(--bg); border-radius:8px; padding:14px 16px; font-size:13px; }
+  .flow-card .flow-output strong { color:var(--wb); }
+  .flow-card .flow-output .item { padding:4px 0; display:flex; align-items:flex-start; gap:8px; }
+  .flow-card .flow-output .item::before { content:'→'; color:var(--text-3); flex-shrink:0; }
+
+  /* ===== 对话示例代码块 ===== */
+  .code-demo { background:var(--code-bg); border-radius:8px; padding:16px 20px; margin:14px 0; overflow-x:auto; font-family:'SF Mono',Consolas,monospace; font-size:13px; line-height:1.7; color:#cdd6f4; }
+  .code-demo .c { color:#6c7086; }
+  .code-demo .s { color:#a6e3a1; }
+  .code-demo .k { color:#cba6f7; }
+  .code-demo .u { color:#89dceb; }
+
+  /* ===== 产出物卡片 ===== */
+  .outputs { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .out-card { background:var(--card); border-radius:var(--radius); padding:24px 20px; border:1px solid var(--border); transition:transform .2s, box-shadow .2s; }
+  .out-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+  .out-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:14px; }
+  .out-card h4 { font-size:15px; margin-bottom:6px; }
+  .out-card p { font-size:13px; color:var(--text-2); margin-bottom:10px; }
+  .out-card .out-tag { display:inline-block; background:var(--bg); color:var(--text-3); font-size:11px; padding:3px 10px; border-radius:12px; margin-right:4px; font-family:monospace; }
+
+  /* ===== 手机展示 ===== */
+  .phones-row { display:flex; gap:16px; overflow-x:auto; padding:8px 4px 20px; scroll-snap-type:x mandatory; }
+  .phones-row::-webkit-scrollbar { height:6px; }
+  .phones-row::-webkit-scrollbar-thumb { background:#ddd; border-radius:3px; }
+  .phone-wrap { flex-shrink:0; scroll-snap-align:center; }
+  .phone-label { text-align:center; font-size:12px; color:var(--text-3); margin-bottom:8px; font-weight:600; }
+  .phone { width:240px; height:460px; background:#1a1a2e; border-radius:32px; padding:7px; box-shadow:var(--shadow-lg); }
+  .screen { width:100%; height:100%; background:#f5f5f5; border-radius:25px; overflow:hidden; display:flex; flex-direction:column; }
+  .sb { height:28px; background:#ff6b35; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:600; position:relative; flex-shrink:0; }
+  .scr { flex:1; overflow:hidden; padding:6px; }
+  .tb { height:38px; background:#fff; display:flex; border-top:1px solid #eee; flex-shrink:0; }
+  .tb-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8px; color:#999; gap:1px; }
+  .tb-item.on { color:#ff6b35; }
+  .tb-item .ti { font-size:14px; }
+
+  .mini-banner { height:50px; border-radius:6px; background:linear-gradient(135deg,#ff6b35,#ff9a3c); padding:8px; color:#fff; display:flex; flex-direction:column; justify-content:center; margin-bottom:8px; }
+  .mini-banner .bt { font-size:11px; font-weight:bold; }
+  .mini-banner .bs { font-size:8px; opacity:.9; }
+  .mini-cat { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+  .mini-cat-i { width:calc(25% - 3px); background:#fff; border-radius:6px; padding:5px 2px; display:flex; flex-direction:column; align-items:center; gap:1px; }
+  .mini-cat-i .ci { font-size:14px; }
+  .mini-cat-i .cn { font-size:8px; }
+  .mini-food { display:flex; background:#fff; border-radius:6px; padding:5px; margin-bottom:5px; gap:5px; }
+  .mini-food-c { width:42px; height:42px; border-radius:4px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .mini-food-c .fe { font-size:18px; }
+  .mini-food-n { font-size:9px; font-weight:bold; }
+  .mini-food-p { color:#ff6b35; font-weight:bold; font-size:11px; }
+
+  .mini-uc { display:flex; align-items:center; padding:10px 6px; background:linear-gradient(135deg,#ff6b35,#ff9a3c); color:#fff; margin-bottom:6px; border-radius:0 0 6px 6px; }
+  .mini-ua { width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:16px; margin-right:8px; }
+  .mini-un { font-size:11px; font-weight:bold; }
+  .mini-card { background:#fff; border-radius:6px; padding:8px; margin-bottom:6px; }
+  .mini-mi { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f5f5f5; font-size:9px; }
+  .mini-mi:last-child { border:none; }
+
+  .mini-ds { height:90px; display:flex; align-items:center; justify-content:center; background:#ff6b35; border-radius:6px; margin-bottom:6px; }
+  .mini-ds .de { font-size:36px; }
+  .mini-di { background:#fff; border-radius:6px; padding:8px; margin-bottom:6px; }
+  .mini-dn { font-size:11px; font-weight:bold; }
+  .mini-dp { color:#ff6b35; font-weight:bold; font-size:14px; }
+
+  /* ===== 上线流程 ===== */
+  .deploy-steps { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:24px 0; }
+  .deploy-step { background:var(--card); border-radius:var(--radius); padding:18px 14px; text-align:center; border:1px solid var(--border); position:relative; }
+  .deploy-step .ds-num { width:32px; height:32px; margin:0 auto 10px; background:var(--green); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; }
+  .deploy-step h5 { font-size:13px; margin-bottom:6px; }
+  .deploy-step p { font-size:11px; color:var(--text-3); }
+  .deploy-arrow { position:absolute; right:-10px; top:50%; transform:translateY(-50%); color:var(--text-3); font-size:18px; z-index:2; }
+
+  /* ===== 优势 ===== */
+  .advantages { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .adv-card { background:var(--card); border-radius:var(--radius); padding:24px; border:1px solid var(--border); display:flex; gap:16px; }
+  .adv-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .adv-card h4 { font-size:16px; margin-bottom:6px; }
+  .adv-card p { font-size:13px; color:var(--text-2); }
+
+  /* ===== Tip ===== */
+  .tip { background:var(--wb-light); border-left:4px solid var(--wb); padding:14px 18px; border-radius:0 8px 8px 0; margin:16px 0; font-size:14px; color:var(--wb-dark); }
+  .tip code { background:rgba(0,102,255,0.1); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:13px; }
+  .tip-warn { background:#fff8e1; border-left-color:#ff9800; color:#e65100; }
+
+  /* ===== CTA ===== */
+  .cta { background:linear-gradient(135deg,#1a1a2e,#2d2d44); color:#fff; padding:56px 32px; text-align:center; border-radius:var(--radius); margin:48px 24px; }
+  .cta h3 { font-size:26px; margin-bottom:10px; }
+  .cta p { font-size:15px; opacity:.7; margin-bottom:24px; }
+  .cta-tags { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .cta-tag { background:rgba(255,255,255,0.1); padding:8px 18px; border-radius:20px; font-size:13px; }
+
+  /* ===== Footer ===== */
+  .footer { text-align:center; padding:32px; color:var(--text-3); font-size:13px; border-top:1px solid var(--border); }
+
+  @media(max-width:768px) {
+    .wb-intro { grid-template-columns:1fr; }
+    .outputs { grid-template-columns:1fr; }
+    .deploy-steps { grid-template-columns:1fr; }
+    .deploy-arrow { display:none; }
+    .advantages { grid-template-columns:1fr; }
+    .hero h1 { font-size:26px; }
+    .hero-stats { gap:24px; }
+    .nav-links { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 导航 ===== -->
+<nav class="nav">
+  <div class="nav-logo"><span class="dot"></span> WorkBuddy × 微信小程序</div>
+  <div class="nav-links">
+    <a href="#what">WorkBuddy 是什么</a>
+    <a href="#flow">开发流程</a>
+    <a href="#output">产出什么</a>
+    <a href="#deploy">怎么上线</a>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <div class="hero-badge">🤖 AI 对话式开发 · 从需求到上线</div>
+  <h1>用 <span class="highlight">WorkBuddy</span> 做微信小程序</h1>
+  <p>一句话描述需求，AI 自动生成完整小程序代码、可视化预览、开发教程，5 步上线到微信生态</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">1</div><div class="label">句话生成</div></div>
+    <div class="hero-stat"><div class="num">4</div><div class="label">个页面</div></div>
+    <div class="hero-stat"><div class="num">22</div><div class="label">个文件</div></div>
+    <div class="hero-stat"><div class="num">5</div><div class="label">步上线</div></div>
+  </div>
+</header>
+
+<!-- ===== WorkBuddy 是什么 ===== -->
+<section class="section" id="what">
+  <div class="wrap">
+    <div class="section-tag">工具介绍</div>
+    <h2>WorkBuddy 是什么？</h2>
+    <p class="sub">一个 AI 编程助手，你用自然语言描述需求，它直接产出可运行的代码和文档</p>
+
+    <div class="wb-intro">
+      <div class="wb-intro-text">
+        <h3>对话即开发</h3>
+        <p>不需要从零写代码。你告诉 WorkBuddy 想要什么，它会：</p>
+        <ul>
+          <li>生成完整的项目代码（WXML/WXSS/JS/JSON）</li>
+          <li>生成高保真预览页，浏览器直接看效果</li>
+          <li>生成开发教程文档，方便团队理解维护</li>
+          <li>支持多轮对话迭代，随时调整修改</li>
+        </ul>
+      </div>
+      <div class="wb-chat">
+        <div class="wb-chat-title">💬 对话示例</div>
+        <div class="chat-msg chat-user">做一个微信小程序开发的demo</div>
+        <div class="chat-msg chat-bot">好的，做一个「美食推荐」小程序，涵盖页面路由、tabBar、组件、API 调用等核心知识点。正在创建项目结构...</div>
+        <div class="chat-msg chat-user">我想看我的 demo</div>
+        <div class="chat-msg chat-bot">做了一个高保真预览页 <span class="code">preview.html</span>，4 个手机界面并排展示，浏览器直接看效果。</div>
+        <div class="chat-msg chat-user">给客户介绍怎么做的 + 怎么上线</div>
+        <div class="chat-msg chat-bot">生成本方案介绍页，含开发流程、产出物、上线步骤。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 开发流程 ===== -->
+<section class="section" id="flow" style="background:#fff;">
+  <div class="wrap">
+    <div class="section-tag">开发流程</div>
+    <h2>五步从需求到上线</h2>
+    <p class="sub">下面是 WorkBuddy 完成这个美食推荐小程序的真实流程</p>
+
+    <div class="flow-timeline">
+
+      <!-- Step 1 -->
+      <div class="flow-step s1">
+        <div class="flow-dot">1</div>
+        <div class="flow-card">
+          <h4>💬 对话提需求</h4>
+          <div class="flow-desc">用一句话告诉 WorkBuddy 要做什么，它会理解需求并规划项目结构</div>
+          <div class="code-demo">
+<span class="c">// 用户输入</span>
+<span class="u">做一个小程序开发的demo</span>
+
+<span class="c">// WorkBuddy 规划</span>
+<span class="c">// → 主题：美食推荐小程序</span>
+<span class="c">// → 4 个页面：首页 / 分类 / 我的 / 详情</span>
+<span class="c">// → 创建 22 个文件的项目结构</span>
+          </div>
+          <div class="flow-output">
+            <strong>产出：</strong>
+            <div class="item">完整项目目录 <code style="font-family:monospace;background:#f0f2f5;padding:1px 5px;border-radius:3px;">miniprogram-demo/</code></div>
+            <div class="item">入口配置 app.js / app.json / app.wxss</div>
+            <div class="item">4 个页面 × 4 个文件（wxml/wxss/js/json）</div>
+            <div class="item">工具函数 utils/util.js</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flow-step s2">
+        <div class="flow-dot">2</div>
+        <div class="flow-card">
+          <h4>👀 生成可视化预览</h4>
+          <div class="flow-desc">WorkBuddy 额外生成一个 HTML 预览页，用浏览器就能看到小程序长什么样，不用打开开发者工具</div>
+          <div class="flow-output">
+            <strong>产出：</strong>
+            <div class="item"><code style="font-family:monospace;background:#f0f2f5;padding:1px 5px;border-radius:3px;">preview.html</code> — 4 个手机界面高保真预览</div>
+            <div class="item">搜索栏、Banner 轮播、分类网格、美食列表</div>
+            <div class="item">左右联动分类页、个人中心、详情页下单栏</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="flow-step s3">
+        <div class="flow-dot">3</div>
+        <div class="flow-card">
+          <h4>📖 生成开发教程</h4>
+          <div class="flow-desc">同步生成一份介绍页，讲解项目结构、核心代码、知识点，方便交付给客户或团队</div>
+          <div class="flow-output">
+            <strong>产出：</strong>
+            <div class="item"><code style="font-family:monospace;background:#f0f2f5;padding:1px 5px;border-radius:3px;">guide.html</code> — 10 章开发教程</div>
+            <div class="item"><code style="font-family:monospace;background:#f0f2f5;padding:1px 5px;border-radius:3px;">intro.html</code> — 客户介绍方案页</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="flow-step s4">
+        <div class="flow-dot">4</div>
+        <div class="flow-card">
+          <h4>🛠️ 导入微信开发者工具</h4>
+          <div class="flow-desc">把 WorkBuddy 生成的代码文件夹导入微信开发者工具，配置 AppID，编译预览</div>
+          <div class="flow-output">
+            <strong>操作：</strong>
+            <div class="item">微信开发者工具 → 导入项目 → 选择 <code style="font-family:monospace;background:#f0f2f5;padding:1px 5px;border-radius:3px;">miniprogram-demo/</code></div>
+            <div class="item">填入自己的 AppID（或选「测试号」）</div>
+            <div class="item">添加 tabBar 图标，或注释掉 iconPath 用纯文字 tab</div>
+            <div class="item">点击编译 → 模拟器看到真实运行效果</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="flow-step s5">
+        <div class="flow-dot">5</div>
+        <div class="flow-card">
+          <h4>🚀 上传 & 发布上线</h4>
+          <div class="flow-desc">在开发者工具上传代码，到微信公众平台提交审核，通过后发布</div>
+          <div class="flow-output">
+            <strong>操作：</strong>
+            <div class="item">开发者工具点「上传」→ 填版本号 → 提交代码包</div>
+            <div class="item">登录 mp.weixin.qq.com → 版本管理 → 提交审核</div>
+            <div class="item">微信团队审核（通常 1-7 天）</div>
+            <div class="item">审核通过 → 发布 → 用户可搜索使用</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== 产出什么 ===== -->
+<section class="section" id="output">
+  <div class="wrap">
+    <div class="section-tag">产出什么</div>
+    <h2>WorkBuddy 一次对话的产出</h2>
+    <p class="sub">不只是代码，连预览和文档一起给你</p>
+
+    <div class="outputs">
+      <div class="out-card">
+        <div class="out-icon" style="background:var(--wb-light);">📦</div>
+        <h4>完整源码</h4>
+        <p>可直接运行的微信小程序项目，含 4 个页面、22 个文件</p>
+        <span class="out-tag">app.js</span>
+        <span class="out-tag">*.wxml</span>
+        <span class="out-tag">*.wxss</span>
+      </div>
+      <div class="out-card">
+        <div class="out-icon" style="background:var(--primary-light);">👁️</div>
+        <h4>可视化预览</h4>
+        <p>HTML 高保真预览页，浏览器直接打开看效果，无需开发者工具</p>
+        <span class="out-tag">preview.html</span>
+      </div>
+      <div class="out-card">
+        <div class="out-icon" style="background:#f3e5f5;">📖</div>
+        <h4>开发教程</h4>
+        <p>项目结构、核心代码、知识点详解，方便交付和团队协作</p>
+        <span class="out-tag">guide.html</span>
+        <span class="out-tag">intro.html</span>
+      </div>
+    </div>
+
+    <!-- 成果展示 -->
+    <h3 style="font-size:18px;margin:40px 0 12px;">📱 预览效果（左右滑动查看）</h3>
+    <div class="phones-row">
+      <div class="phone-wrap">
+        <div class="phone-label">首页</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sb">美食推荐</div>
+            <div class="scr">
+              <div style="background:#f5f5f5;border-radius:10px;padding:5px 8px;font-size:9px;color:#999;margin-bottom:6px;">🔍 搜索美食、餐厅...</div>
+              <div class="mini-banner"><div class="bt">夏日冰饮季</div><div class="bs">第二杯半价</div></div>
+              <div class="mini-cat">
+                <div class="mini-cat-i"><span class="ci">🍜</span><span class="cn">面食</span></div>
+                <div class="mini-cat-i"><span class="ci">🌶️</span><span class="cn">川菜</span></div>
+                <div class="mini-cat-i"><span class="ci">🦐</span><span class="cn">海鲜</span></div>
+                <div class="mini-cat-i"><span class="ci">🥩</span><span class="cn">西餐</span></div>
+                <div class="mini-cat-i"><span class="ci">🥗</span><span class="cn">轻食</span></div>
+                <div class="mini-cat-i"><span class="ci">🍰</span><span class="cn">甜品</span></div>
+                <div class="mini-cat-i"><span class="ci">🥤</span><span class="cn">饮品</span></div>
+                <div class="mini-cat-i"><span class="ci">🍢</span><span class="cn">小吃</span></div>
+              </div>
+              <div class="mini-food">
+                <div class="mini-food-c" style="background:#ff6b35"><span class="fe">🍜</span></div>
+                <div><div class="mini-food-n">红烧牛肉面</div><div class="mini-food-p">¥32</div></div>
+              </div>
+              <div class="mini-food">
+                <div class="mini-food-c" style="background:#ff9a3c"><span class="fe">🦞</span></div>
+                <div><div class="mini-food-n">麻辣小龙虾</div><div class="mini-food-p">¥88</div></div>
+              </div>
+            </div>
+            <div class="tb"><div class="tb-item on"><span class="ti">🏠</span>发现</div><div class="tb-item"><span class="ti">📋</span>分类</div><div class="tb-item"><span class="ti">👤</span>我的</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-label">分类</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sb">美食分类</div>
+            <div class="scr" style="padding:0">
+              <div style="display:flex;height:100%">
+                <div style="width:60px;background:#fff">
+                  <div style="padding:8px 0;text-align:center;font-size:8px;background:#f5f5f5;color:#ff6b35;font-weight:bold;border-left:2px solid #ff6b35;">🍜 面食</div>
+                  <div style="padding:8px 0;text-align:center;font-size:8px;color:#666;">🌶️ 川菜</div>
+                  <div style="padding:8px 0;text-align:center;font-size:8px;color:#666;">🦐 海鲜</div>
+                  <div style="padding:8px 0;text-align:center;font-size:8px;color:#666;">🥩 西餐</div>
+                  <div style="padding:8px 0;text-align:center;font-size:8px;color:#666;">🥗 轻食</div>
+                  <div style="padding:8px 0;text-align:center;font-size:8px;color:#666;">🍰 甜品</div>
+                </div>
+                <div style="flex:1;padding:6px">
+                  <div style="font-size:11px;font-weight:bold;margin-bottom:6px">面食</div>
+                  <div style="background:#fff;border-radius:6px;overflow:hidden;margin-bottom:6px">
+                    <div style="height:50px;background:#ff6b35;display:flex;align-items:center;justify-content:center;font-size:22px">🍜</div>
+                    <div style="padding:5px"><div style="font-size:9px;font-weight:bold">红烧牛肉面</div><div style="font-size:11px;color:#ff6b35;font-weight:bold">¥32</div></div>
+                  </div>
+                  <div style="background:#fff;border-radius:6px;overflow:hidden">
+                    <div style="height:50px;background:#feca57;display:flex;align-items:center;justify-content:center;font-size:22px">🍜</div>
+                    <div style="padding:5px"><div style="font-size:9px;font-weight:bold">豚骨拉面</div><div style="font-size:11px;color:#ff6b35;font-weight:bold">¥38</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tb"><div class="tb-item"><span class="ti">🏠</span>发现</div><div class="tb-item on"><span class="ti">📋</span>分类</div><div class="tb-item"><span class="ti">👤</span>我的</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-label">我的</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sb">我的</div>
+            <div class="scr" style="padding:0">
+              <div class="mini-uc">
+                <div class="mini-ua">😋</div>
+                <div><div class="mini-un">美食爱好者</div><div style="font-size:8px;opacity:.8">ID: wx_demo_user</div></div>
+              </div>
+              <div style="padding:6px">
+                <div class="mini-card">
+                  <div style="font-size:10px;font-weight:bold;margin-bottom:6px">我的订单</div>
+                  <div style="display:flex;justify-content:space-around;font-size:8px;color:#666">
+                    <div style="text-align:center">💰<br>待付款</div>
+                    <div style="text-align:center">🚀<br>配送中</div>
+                    <div style="text-align:center">📝<br>待评价</div>
+                    <div style="text-align:center">💬<br>售后</div>
+                  </div>
+                </div>
+                <div class="mini-card">
+                  <div class="mini-mi"><span>❤️ 我的收藏</span><span style="color:#ccc">></span></div>
+                  <div class="mini-mi"><span>📦 我的订单</span><span style="color:#ff6b35;background:#fff5f0;padding:0 4px;border-radius:8px;font-size:7px">2</span></div>
+                  <div class="mini-mi"><span>🎫 优惠券</span><span style="color:#ff6b35;background:#fff5f0;padding:0 4px;border-radius:8px;font-size:7px">3</span></div>
+                  <div class="mini-mi"><span>⚙️ 设置</span><span style="color:#ccc">></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="tb"><div class="tb-item"><span class="ti">🏠</span>发现</div><div class="tb-item"><span class="ti">📋</span>分类</div><div class="tb-item on"><span class="ti">👤</span>我的</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone-label">详情</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sb">美食详情</div>
+            <div class="scr">
+              <div class="mini-ds"><span class="de">🍜</span></div>
+              <div class="mini-di">
+                <div style="display:flex;justify-content:space-between"><div class="mini-dn">红烧牛肉面</div><div class="mini-dp">¥32</div></div>
+                <div style="font-size:8px;color:#999;margin:3px 0">⭐4.8 | 已售2380 | 面食</div>
+                <div style="font-size:9px;color:#666">精选牛腱子肉，慢炖6小时</div>
+              </div>
+              <div class="mini-card">
+                <div style="font-size:10px;font-weight:bold;margin-bottom:6px">用户评价(3)</div>
+                <div style="font-size:8px;color:#666;padding:3px 0;border-bottom:1px solid #f5f5f5">😋 吃货小王 ⭐5.0<br>太好吃了！分量很足</div>
+                <div style="font-size:8px;color:#666;padding:3px 0">🤤 美食达人 ⭐4.5<br>味道不错，推荐！</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 怎么上线 ===== -->
+<section class="section" id="deploy" style="background:#fff;">
+  <div class="wrap">
+    <div class="section-tag">怎么上线</div>
+    <h2>从代码到微信上线</h2>
+    <p class="sub">WorkBuddy 生成代码后，按以下 5 步把小程序发布到微信生态</p>
+
+    <div class="deploy-steps">
+      <div class="deploy-step">
+        <div class="ds-num">1</div>
+        <h5>注册小程序账号</h5>
+        <p>mp.weixin.qq.com 注册，获取 AppID</p>
+        <div class="deploy-arrow">→</div>
+      </div>
+      <div class="deploy-step">
+        <div class="ds-num">2</div>
+        <h5>导入开发者工具</h5>
+        <p>导入 WorkBuddy 生成的代码文件夹</p>
+        <div class="deploy-arrow">→</div>
+      </div>
+      <div class="deploy-step">
+        <div class="ds-num">3</div>
+        <h5>真机预览调试</h5>
+        <p>扫码在手机微信中测试效果</p>
+        <div class="deploy-arrow">→</div>
+      </div>
+      <div class="deploy-step">
+        <div class="ds-num">4</div>
+        <h5>上传 & 提审</h5>
+        <p>上传代码包，公众平台提交审核</p>
+        <div class="deploy-arrow">→</div>
+      </div>
+      <div class="deploy-step">
+        <div class="ds-num">5</div>
+        <h5>发布上线</h5>
+        <p>审核通过后发布，用户可搜索使用</p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>前置条件：</strong>需要 <code>微信小程序账号</code>（企业/个人均可，企业需营业执照）+ <code>微信开发者工具</code>（免费下载）。个人账号不支持支付等能力，企业账号功能完整。
+    </div>
+
+    <div class="tip tip-warn">
+      <strong>审核周期：</strong>微信团队通常 1-7 个工作日完成审核。涉及支付、直播、社交等功能需对应类目资质，建议提前准备。
+    </div>
+  </div>
+</section>
+
+<!-- ===== 优势 ===== -->
+<section class="section">
+  <div class="wrap">
+    <div class="section-tag">为什么用 WorkBuddy</div>
+    <h2>对比传统开发的优势</h2>
+    <p class="sub">把开发周期从"周"压缩到"小时"</p>
+
+    <div class="advantages">
+      <div class="adv-card">
+        <div class="adv-icon" style="background:var(--wb-light);">⚡</div>
+        <div>
+          <h4>速度快</h4>
+          <p>一句话生成完整项目，传统开发需数天的搭建工作压缩到几分钟</p>
+        </div>
+      </div>
+      <div class="adv-card">
+        <div class="adv-icon" style="background:var(--primary-light);">👁️</div>
+        <div>
+          <h4>所见即所得</h4>
+          <p>同步生成 HTML 预览页，客户不用懂技术也能直接看效果、提反馈</p>
+        </div>
+      </div>
+      <div class="adv-card">
+        <div class="adv-icon" style="background:#e8f5e9;">🔄</div>
+        <div>
+          <h4>随时迭代</h4>
+          <p>多轮对话调整，"加个搜索栏"、"换个颜色"，WorkBuddy 直接改代码</p>
+        </div>
+      </div>
+      <div class="adv-card">
+        <div class="adv-icon" style="background:#f3e5f5;">📖</div>
+        <div>
+          <h4>自带文档</h4>
+          <p>代码 + 预览 + 教程一起产出，交付即文档，降低团队接手成本</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<div class="cta">
+  <h3>🤖 让 AI 帮你做小程序</h3>
+  <p>从需求对话到微信上线，WorkBuddy 全流程陪跑</p>
+  <div class="cta-tags">
+    <span class="cta-tag">💬 对话式开发</span>
+    <span class="cta-tag">📦 完整源码</span>
+    <span class="cta-tag">👁️ 可视化预览</span>
+    <span class="cta-tag">📖 含开发教程</span>
+    <span class="cta-tag">🚀 5 步上线</span>
+  </div>
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+  <p>WorkBuddy × 微信小程序 — AI 开发上线全流程方案</p>
+  <p style="margin-top:4px;">对话提需求 → 生成代码 → 预览验证 → 导入工具 → 上线发布</p>
+</div>
+
+</body>
+</html>

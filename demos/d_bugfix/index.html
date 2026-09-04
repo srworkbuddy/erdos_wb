@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bug 修复 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1d1d1f; line-height: 1.6; }
+  .container { max-width: 960px; margin: 40px auto; padding: 0 24px; }
+
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #1d1d1f; }
+  .subtitle { font-size: 14px; color: #86868b; margin-bottom: 32px; }
+
+  /* 输入区 */
+  .input-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5ea;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5ea;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+
+  /* 错误堆栈 */
+  .error-block {
+    margin: 0;
+    padding: 14px 18px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+    background: #fff5f5;
+    color: #dc3545;
+    border-bottom: 1px solid #ffe0e0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 代码 */
+  pre {
+    margin: 0;
+    padding: 20px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+  }
+  .kw { color: #c62828; font-weight: 600; }
+  .fn { color: #1565c0; }
+  .str { color: #2e7d32; }
+  .hl-bug { background: rgba(220,53,69,0.10); display: inline-block; width: calc(100% + 40px); margin-left: -20px; padding-left: 20px; }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-top: 1px solid #e5e5ea;
+    background: #fafafa;
+  }
+  .status-text { font-size: 13px; color: #86868b; }
+  .status-text.active { color: #007aff; }
+  .status-text.done { color: #34c759; }
+  .btn-fix {
+    padding: 8px 22px;
+    border-radius: 8px;
+    border: none;
+    background: #007aff;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-fix:hover { background: #0062cc; }
+  .btn-fix:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 结果区域 */
+  #results { display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .result-section {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5ea;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .result-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e5e5ea;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-body { padding: 20px 22px; }
+
+  /* 文字内容样式 */
+  .section-title { font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px; }
+  .text-body { font-size: 14px; color: #444; line-height: 1.9; }
+  .text-body p { margin-bottom: 12px; }
+  .text-body strong { color: #1d1d1f; }
+
+  /* 触发条件列表 */
+  .trigger-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 12px;
+  }
+  .trigger-list li {
+    position: relative;
+    padding: 8px 0 8px 24px;
+    font-size: 13.5px;
+    color: #555;
+    border-bottom: 1px dashed #eee;
+  }
+  .trigger-list li:last-child { border-bottom: none; }
+  .trigger-list li::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 15px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e6a23c;
+  }
+
+  /* 修复代码块 */
+  .fix-code-block {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-left: 3px solid #67c23a;
+  }
+  .fix-code-label { font-size: 12px; color: #67c23a; font-weight: 600; margin-bottom: 10px; }
+  .fix-code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .fix-note {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #ecf5ff;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #409eff;
+    line-height: 1.7;
+  }
+
+  /* 影响范围表格 */
+  .scope-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13.5px;
+  }
+  .scope-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: #fafafa;
+    color: #666;
+    font-weight: 600;
+    border-bottom: 2px solid #e5e5ea;
+    width: 30%;
+  }
+  .scope-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+  .scope-table tr:last-child td { border-bottom: none; }
+
+  /* 测试用例 */
+  .test-case-block {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-left: 3px solid #409eff;
+  }
+  .test-code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .case-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .case-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag-normal { background: #f0f9eb; color: #67c23a; }
+  .tag-edge   { background: #fdf6ec; color: #e6a23c; }
+
+  /* 结论 */
+  .conclusion-box {
+    background: linear-gradient(135deg, #f0f9eb 0%, #ecf5ff 100%);
+    border-radius: 10px;
+    padding: 20px 24px;
+    border: 1px solid #d9ecff;
+  }
+  .conclusion-box h3 { font-size: 15px; margin-bottom: 10px; color: #303133; }
+  .conclusion-box p { font-size: 14px; color: #606266; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Bug 修复</h1>
+<p class="subtitle">智能定位根因、生成修复方案与回归测试用例</p>
+
+<!-- 输入区：错误 + 代码 -->
+<div class="input-card">
+  <div class="card-header">
+    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    <span>错误信息 &amp; 问题代码</span>
+  </div>
+  <div class="error-block">TypeError: Cannot read property 'map' of undefined
+    at UserList.render (UserList.jsx:28:18)
+    at finishClassComponent (react-dom.development.js:19755:22)</div>
+  <pre id="code-area"><code><span class="kw">function</span> <span class="fn">UserList</span>({ users }) {
+  <span class="kw">return</span> (
+    &lt;div&gt;
+<span class="hl-bug">      {users.<span class="fn">map</span>(u =&gt; &lt;span key={u.id}&gt;{u.name}&lt;/span&gt;)}</span>
+    &lt;/div&gt;
+  );
+}</code></pre>
+  <div class="action-bar">
+    <span class="status-text" id="status">就绪，等待分析</span>
+    <button class="btn-fix" id="btnRun" onclick="runFix()">开始诊断并修复</button>
+  </div>
+</div>
+
+<!-- 修复结果 -->
+<div id="results">
+
+  <!-- 1. 根因定位 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6a23c" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      根因定位
+    </div>
+    <div class="result-body">
+      <div class="text-body">
+        <p>错误类型为 <strong>TypeError: Cannot read property 'map' of undefined</strong>，触发点在 <code>UserList.jsx</code> 第 28 行。</p>
+        <p>问题根因是 <strong>users 参数未做空值保护</strong>。当父组件在数据加载完成前渲染 UserList，或接口返回异常导致 users 为 undefined/null 时，直接调用 users.map() 会抛出 TypeError，导致整个组件崩溃白屏。</p>
+        <p style="font-weight: 600; font-size: 13px; color: #666;">触发条件：</p>
+        <ul class="trigger-list">
+          <li>父组件初始状态 users 为 undefined，未传参</li>
+          <li>接口请求失败或返回格式异常，data.users 字段缺失</li>
+          <li>后端返回 { users: null } 而非空数组</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 修复方案 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#67c23a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      修复方案（防御式处理）
+    </div>
+    <div class="result-body">
+      <div class="fix-code-block">
+        <div class="fix-code-label">UserList.jsx — 修复后</div>
+        <div class="fix-code"><span style="color:#c62828;font-weight:600">function</span> <span style="color:#1565c0">UserList</span>({ users }) {
+  <span style="color:#90a4ae">// 添加默认值 + 空值保护</span>
+  <span style="color:#c62828;font-weight:600">const</span> safeUsers = users ?? [];
+
+  <span style="color:#c62828;font-weight:600">return</span> (
+    &lt;div&gt;
+      {safeUsers.length > <span style="color:#e65100">0</span>
+        ? safeUsers.<span style="color:#1565c0">map</span>(u =&gt; &lt;span key={u.id}&gt;{u.name}&lt;/span&gt;)
+        : &lt;span style={{ color: <span style="color:#2e7d32">'#999'</span> }}&gt;暂无数据&lt;/span&gt;}
+    &lt;/div&gt;
+  );
+}</div>
+      </div>
+      <div class="fix-note">
+        <strong>修改说明：</strong>使用空值合并运算符 ?? 将 null/undefined 统一转为空数组 []，确保 .map() 调用安全。同时增加空状态展示，提升用户体验。<br>
+        <strong>改动量：</strong>新增 1 行默认值处理 + 三元表达式替换原 map 调用，属于最小改动。
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 影响范围 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#409eff" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      影响范围评估
+    </div>
+    <div class="result-body">
+      <table class="scope-table">
+        <tr><th>影响文件</th><td>仅 UserList.jsx</td></tr>
+        <tr><th>影响逻辑</th><td>仅组件渲染层，不影响数据获取和状态管理</td></tr>
+        <tr><th>向后兼容</th><td>完全兼容，原有正常传入数组的行为不变</td></tr>
+        <tr><th>副作用风险</th><td>无</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. 回归测试用例 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#909399" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      回归测试用例
+    </div>
+    <div class="result-body">
+      <div class="test-case-block">
+        <div class="fix-code-label">UserList.test.jsx</div>
+        <div class="test-code"><span style="color:#90a4ae">// 使用 @testing-library/react</span>
+<span style="color:#c62828;font-weight:600">import</span> { render, screen } <span style="color:#c62828;font-weight:600">from</span> <span style="color:#2e7d32">'@testing-library/react'</span>;
+<span style="color:#c62828;font-weight:600">import</span> { UserList } <span style="color:#c62828;font-weight:600">from</span> <span style="color:#2e7d32">'./UserList'</span>;
+
+describe(<span style="color:#2e7d32">'UserList'</span>, () => {
+  it(<span style="color:#2e7d32">'正常渲染用户列表'</span>, () => {
+    <span style="color:#c62828;font-weight:600">const</span> users = [
+      { id: <span style="color:#e65100">1</span>, name: <span style="color:#2e7d32">'张三'</span> },
+      { id: <span style="color:#e65100">2</span>, name: <span style="color:#2e7d32">'李四'</span> },
+    ];
+    render(&lt;UserList users={users} /&gt;);
+    expect(screen.getByText(<span style="color:#2e7d32">'张三'</span>)).toBeTruthy();
+    expect(screen.getByText(<span style="color:#2e7d32">'李四'</span>)).toBeTruthy();
+  });
+
+  it(<span style="color:#2e7d32">'users 为 null 时不崩溃，显示暂无数据'</span>, () => {
+    render(&lt;UserList users={<span style="color:#993556">null</span>} /&gt;);
+    expect(screen.getByText(<span style="color:#2e7d32">'暂无数据'</span>)).toBeTruthy();
+  });
+
+  it(<span style="color:#2e7d32">'users 为 undefined 时不崩溃，显示暂无数据'</span>, () => {
+    render(&lt;UserList users={<span style="color:#993556">undefined</span>} /&gt;);
+    expect(screen.getByText(<span style="color:#2e7d32">'暂无数据'</span>)).toBeTruthy();
+  });
+
+  it(<span style="color:#2e7d32">'users 为空数组时显示暂无数据'</span>, () => {
+    render(&lt;UserList users={[<span style="color:#993556">[]</span>]} /&gt;);
+    expect(screen.getByText(<span style="color:#2e7d32">'暂无数据'</span>)).toBeTruthy();
+  });
+});</div>
+      </div>
+      <div class="case-tags">
+        <span class="case-tag tag-normal">正常路径 1 条</span>
+        <span class="case-tag tag-edge">边界场景 3 条（null / undefined / 空数组）</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结论 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#67c23a" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01"/></svg>
+      修复结论
+    </div>
+    <div class="result-body">
+      <div class="conclusion-box">
+        <h3>总体评价</h3>
+        <p>该 Bug 属于<strong>空指针/空值未防护类问题</strong>，在前端开发中高频出现。本次采用防御式处理策略，通过默认值兜底确保组件健壮性。<strong>修复后可安全合入主分支</strong>，建议同步补充上述回归测试用例到 CI 流水线。</p>
+        <h3 style="margin-top: 16px;">后续建议</h3>
+        <p>• 排查项目中其他使用 .map()/.filter() 等数组方法的位置，统一添加空值保护<br>
+           • 在父组件层面对接口返回数据做标准化处理（null → []），从源头避免此类问题<br>
+           • 考虑引入 TypeScript 严格模式，在编译阶段拦截部分空值问题</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#results -->
+
+</div><!-- /.container -->
+
+<script>var running=false;function runFix(){if(running)return;running=true;var btn=document.getElementById('btnRun');var status=document.getElementById('status');var results=document.getElementById('results');btn.disabled=true;results.style.display='none';var phases=['正在解析错误堆栈...','正在定位根因...','正在生成修复方案...','正在编写回归测试用例...'];var i=0;status.className='status-text active';var timer=setInterval(function(){if(i<phases.length){status.textContent=phases[i];i++;}else{clearInterval(timer);showResults();}},550);}function showResults(){var status=document.getElementById('status');var btn=document.getElementById('btnRun');var results=document.getElementById('results');status.textContent='诊断完成 — 已生成修复方案';status.className='status-text done';btn.disabled=false;btn.textContent='重新诊断';running=false;results.style.display='block';setTimeout(function(){results.scrollIntoView({behavior:'smooth',block:'start'});},100);}</script>
+</body>
+</html>

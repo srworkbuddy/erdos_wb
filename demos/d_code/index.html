@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Code Generator · 代码生成全流程 Demo</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --line:#e8eaf0; --brand:#6366f1; --brand2:#8b5cf6; --ok:#10b981; --warn:#f59e0b;
+    --shadow:0 6px 24px rgba(31,41,55,.06); --radius:14px;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px}
+
+  /* hero */
+  .hero{text-align:center;padding:18px 0 30px}
+  .hero .badge{display:inline-block;font-size:12px;font-weight:600;color:var(--brand);background:rgba(99,102,241,.08);padding:5px 12px;border-radius:20px;margin-bottom:14px;letter-spacing:.5px}
+  .hero h1{font-size:34px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(120deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px}
+  .hero p{color:var(--muted);font-size:15px;max-width:620px;margin:0 auto}
+  .flow-tag{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .flow-tag span{font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--line);padding:5px 11px;border-radius:8px}
+  .flow-tag span b{color:var(--brand)}
+
+  /* input zone */
+  .input-zone{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-top:26px}
+  .input-zone label{font-size:13px;font-weight:600;color:var(--ink);display:block;margin-bottom:10px}
+  .input-zone label .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--brand);margin-right:7px;vertical-align:middle}
+  textarea{width:100%;min-height:88px;border:1.5px solid var(--line);border-radius:10px;padding:13px 14px;font-size:14px;font-family:inherit;resize:vertical;transition:border-color .2s,box-shadow .2s;color:var(--ink)}
+  textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+  .examples button{font-size:12px;color:var(--muted);background:#f3f4f8;border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;transition:all .15s}
+  .examples button:hover{color:var(--brand);border-color:var(--brand);background:rgba(99,102,241,.06)}
+  .actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+  .btn-gen{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;border:none;padding:11px 26px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+  .btn-gen:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(99,102,241,.4)}
+  .btn-gen:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer}
+  .btn-ghost:hover{color:var(--ink);border-color:#cbd1dd}
+  .hint{font-size:12px;color:var(--muted);margin-left:auto}
+
+  /* pipeline */
+  .pipeline{margin-top:30px;display:none}
+  .pipeline.active{display:block}
+  .stage{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;opacity:.45;transition:opacity .4s}
+  .stage.active{opacity:1}
+  .stage.done{opacity:.85}
+  .stage-head{display:flex;align-items:center;gap:13px;padding:16px 20px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(99,102,241,.03),transparent)}
+  .stage-num{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));flex-shrink:0}
+  .stage.done .stage-num{background:var(--ok)}
+  .stage-title{font-size:15px;font-weight:700}
+  .stage-sub{font-size:12px;color:var(--muted);margin-left:2px}
+  .stage-state{margin-left:auto;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:#f3f4f8;color:var(--muted)}
+  .stage-state.running{background:rgba(245,158,11,.12);color:var(--warn)}
+  .stage-state.ok{background:rgba(16,185,129,.12);color:var(--ok)}
+  .stage-body{padding:18px 20px;display:none}
+  .stage.active .stage-body,.stage.done .stage-body{display:block}
+
+  /* spinner */
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(245,158,11,.3);border-top-color:var(--warn);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* parse result */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .blk{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .blk h4{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px;font-weight:600}
+  .blk p.lead{font-size:14px;font-weight:600;color:var(--ink)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .tags span{font-size:12px;background:#fff;border:1px solid var(--line);padding:3px 9px;border-radius:6px;color:#4b5563}
+  .tags span.t{color:var(--brand);border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.05)}
+  .feat-list{list-style:none;margin-top:2px}
+  .feat-list li{font-size:13px;padding:4px 0;color:#374151;display:flex;align-items:flex-start;gap:8px}
+  .feat-list li::before{content:"✓";color:var(--ok);font-weight:700;flex-shrink:0}
+
+  /* design */
+  .design-row{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+  .design-row .k{font-size:12px;color:var(--muted);min-width:84px;padding-top:2px;font-weight:600}
+  .design-row .v{font-size:13px;color:#374151;flex:1}
+  .arch{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .arch .node{font-size:12px;background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.1));border:1px solid rgba(99,102,241,.25);color:var(--brand);padding:5px 11px;border-radius:8px;font-weight:600}
+
+  /* code */
+  .codebox{background:#1e1e2e;border-radius:10px;overflow:hidden;margin-top:4px}
+  .codebar{display:flex;align-items:center;gap:7px;padding:9px 13px;background:#181825}
+  .codebar .d{width:11px;height:11px;border-radius:50%}
+  .codebar .fname{font-size:12px;color:#9ca3af;margin-left:6px;font-family:var(--mono)}
+  .codebox pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:#cdd6f4;max-height:380px}
+  .codebox pre .cur{display:inline-block;width:7px;height:14px;background:#cdd6f4;vertical-align:middle;animation:bk 1s steps(2) infinite;margin-left:1px}
+  @keyframes bk{50%{opacity:0}}
+  .tok-tag{color:#f38ba8}.tok-attr{color:#fab387}.tok-str{color:#a6e3a1}.tok-kw{color:#cba6f7}.tok-fn{color:#89b4fa}.tok-com{color:#6c7086;font-style:italic}.tok-num{color:#fab387}
+
+  /* run */
+  .run-wrap{display:grid;grid-template-columns:1fr;gap:14px}
+  .device{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(31,41,55,.05)}
+  .device-bar{display:flex;align-items:center;gap:6px;padding:9px 13px;background:#f3f4f8;border-bottom:1px solid var(--line)}
+  .device-bar .d{width:10px;height:10px;border-radius:50%}
+  .device-bar .d.r{background:#ff5f57}.device-bar .d.y{background:#febc2e}.device-bar .d.g{background:#28c840}
+  .device-bar .url{font-size:11px;color:var(--muted);margin-left:8px;font-family:var(--mono);background:#fff;padding:2px 9px;border-radius:6px;border:1px solid var(--line)}
+  .device iframe{width:100%;height:340px;border:none;background:#fff}
+  .run-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .run-meta span{font-size:12px;color:var(--ok);background:rgba(16,185,129,.1);padding:4px 10px;border-radius:6px;font-weight:500}
+
+  .foot{text-align:center;margin-top:34px;color:var(--muted);font-size:12.5px}
+  .foot b{color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="badge">⚡ CODE GENERATION PIPELINE</span>
+    <h1>AI 代码生成全流程 Demo</h1>
+    <p>输入一句自然语言需求，观察 AI 如何完成「需求解析 → 方案设计 → 代码生成 → 运行验证」全流程，最终产出可运行的前端组件。</p>
+    <div class="flow-tag">
+      <span><b>①</b> 需求解析</span>
+      <span><b>②</b> 方案设计</span>
+      <span><b>③</b> 代码生成</span>
+      <span><b>④</b> 运行验证</span>
+    </div>
+  </div>
+
+  <div class="input-zone">
+    <label><span class="dot"></span>自然语言需求</label>
+    <textarea id="need" placeholder="例如：做一个按钮，点击后开始 10 秒倒计时，期间禁用并显示剩余秒数，结束后恢复可用"></textarea>
+    <div class="examples">
+      <span style="font-size:12px;color:var(--muted);align-self:center;margin-right:2px">示例：</span>
+      <button data-case="countdown">⏱ 倒计时按钮</button>
+      <button data-case="quote">💬 随机名言卡片</button>
+      <button data-case="todo">✅ 待办清单</button>
+      <button data-case="palette">🎨 颜色调色板</button>
+    </div>
+    <div class="actions">
+      <button class="btn-gen" id="genBtn">🚀 开始生成</button>
+      <button class="btn-ghost" id="resetBtn">重置</button>
+      <span class="hint" id="hint">选择示例或自行输入需求</span>
+    </div>
+  </div>
+
+  <div class="pipeline" id="pipeline">
+
+    <!-- Stage 1 -->
+    <div class="stage" id="s1">
+      <div class="stage-head">
+        <div class="stage-num">1</div>
+        <div>
+          <div class="stage-title">需求解析 <span class="stage-sub">Intent Parsing</span></div>
+        </div>
+        <div class="stage-state" id="s1state">等待中</div>
+      </div>
+      <div class="stage-body">
+        <div class="grid2">
+          <div class="blk">
+            <h4>核心意图</h4>
+            <p class="lead" id="p-intent">—</p>
+            <h4 style="margin-top:14px">功能点</h4>
+            <ul class="feat-list" id="p-feats"></ul>
+          </div>
+          <div class="blk">
+            <h4>技术要素</h4>
+            <div class="tags" id="p-tech"></div>
+            <h4 style="margin-top:14px">交互边界</h4>
+            <div class="tags" id="p-edge"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage 2 -->
+    <div class="stage" id="s2">
+      <div class="stage-head">
+        <div class="stage-num">2</div>
+        <div>
+          <div class="stage-title">方案设计 <span class="stage-sub">Solution Design</span></div>
+        </div>
+        <div class="stage-state" id="s2state">等待中</div>
+      </div>
+      <div class="stage-body">
+        <div class="blk">
+          <div class="design-row"><div class="k">组件结构</div><div class="v"><div class="arch" id="d-arch"></div></div></div>
+          <div class="design-row"><div class="k">状态设计</div><div class="v" id="d-state">—</div></div>
+          <div class="design-row"><div class="k">技术选型</div><div class="v" id="d-stack">—</div></div>
+          <div class="design-row"><div class="k">样式策略</div><div class="v" id="d-style">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage 3 -->
+    <div class="stage" id="s3">
+      <div class="stage-head">
+        <div class="stage-num">3</div>
+        <div>
+          <div class="stage-title">代码生成 <span class="stage-sub">Code Generation</span></div>
+        </div>
+        <div class="stage-state" id="s3state">等待中</div>
+      </div>
+      <div class="stage-body">
+        <div class="codebox">
+          <div class="codebar">
+            <span class="d" style="background:#ff5f57"></span><span class="d" style="background:#febc2e"></span><span class="d" style="background:#28c840"></span>
+            <span class="fname" id="code-fname">component.html</span>
+          </div>
+          <pre><code id="code-out"></code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage 4 -->
+    <div class="stage" id="s4">
+      <div class="stage-head">
+        <div class="stage-num">4</div>
+        <div>
+          <div class="stage-title">运行验证 <span class="stage-sub">Run &amp; Verify</span></div>
+        </div>
+        <div class="stage-state" id="s4state">等待中</div>
+      </div>
+      <div class="stage-body">
+        <div class="run-wrap">
+          <div class="device">
+            <div class="device-bar">
+              <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+              <span class="url">localhost / preview</span>
+            </div>
+            <iframe id="run-frame" sandbox="allow-scripts"></iframe>
+          </div>
+          <div class="run-meta" id="run-meta"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    Demo · 演示「自然语言 → 可运行代码」全流程 · 生成的组件可在上方预览区真实交互 · <b>Powered by AI Code Pipeline</b>
+  </div>
+</div>
+
+<script>function _regenerator(){var e,t,r="function"==typeof Symbol?Symbol:{},n=r.iterator||"@@iterator",o=r.toStringTag||"@@toStringTag";function i(r,n,o,i){var c=n&&n.prototype instanceof Generator?n:Generator,u=Object.create(c.prototype);return _regeneratorDefine2(u,"_invoke",function(r,n,o){var i,c,u,f=0,p=o||[],y=!1,G={p:0,n:0,v:e,a:d,f:d.bind(e,4),d:function d(t,r){return i=t,c=0,u=e,G.n=r,a;}};function d(r,n){for(c=r,u=n,t=0;!y&&f&&!o&&t<p.length;t++){var o,i=p[t],d=G.p,l=i[2];r>3?(o=l===n)&&(u=i[(c=i[4])?5:(c=3,3)],i[4]=i[5]=e):i[0]<=d&&((o=r<2&&d<i[1])?(c=0,G.v=n,G.n=i[1]):d<l&&(o=r<3||i[0]>n||n>l)&&(i[4]=r,i[5]=n,G.n=l,c=0));}if(o||r>1)return a;throw y=!0,n;}return function(o,p,l){if(f>1)throw TypeError("Generator is already running");for(y&&1===p&&d(p,l),c=p,u=l;(t=c<2?e:u)||!y;){i||(c?c<3?(c>1&&(G.n=-1),d(c,u)):G.n=u:G.v=u);try{if(f=2,i){if(c||(o="next"),t=i[o]){if(!(t=t.call(i,u)))throw TypeError("iterator result is not an object");if(!t.done)return t;u=t.value,c<2&&(c=0);}else 1===c&&(t=i.return)&&t.call(i),c<2&&(u=TypeError("The iterator does not provide a '"+o+"' method"),c=1);i=e;}else if((t=(y=G.n<0)?u:r.call(n,G))!==a)break;}catch(t){i=e,c=1,u=t;}finally{f=1;}}return{value:t,done:y};};}(r,o,i),!0),u;}var a={};function Generator(){}function GeneratorFunction(){}function GeneratorFunctionPrototype(){}t=Object.getPrototypeOf;var c=[][n]?t(t([][n]())):(_regeneratorDefine2(t={},n,function(){return this;}),t),u=GeneratorFunctionPrototype.prototype=Generator.prototype=Object.create(c);function f(e){return Object.setPrototypeOf?Object.setPrototypeOf(e,GeneratorFunctionPrototype):(e.__proto__=GeneratorFunctionPrototype,_regeneratorDefine2(e,o,"GeneratorFunction")),e.prototype=Object.create(u),e;}return GeneratorFunction.prototype=GeneratorFunctionPrototype,_regeneratorDefine2(u,"constructor",GeneratorFunctionPrototype),_regeneratorDefine2(GeneratorFunctionPrototype,"constructor",GeneratorFunction),GeneratorFunction.displayName="GeneratorFunction",_regeneratorDefine2(GeneratorFunctionPrototype,o,"GeneratorFunction"),_regeneratorDefine2(u),_regeneratorDefine2(u,o,"Generator"),_regeneratorDefine2(u,n,function(){return this;}),_regeneratorDefine2(u,"toString",function(){return"[object Generator]";}),(_regenerator=function _regenerator(){return{w:i,m:f};})();}function _regeneratorDefine2(e,r,n,t){var i=Object.defineProperty;try{i({},"",{});}catch(e){i=0;}_regeneratorDefine2=function _regeneratorDefine(e,r,n,t){function o(r,n){_regeneratorDefine2(e,r,function(e){return this._invoke(r,n,e);});}r?i?i(e,r,{value:n,enumerable:!t,configurable:!t,writable:!t}):e[r]=n:(o("next",0),o("throw",1),o("return",2));},_regeneratorDefine2(e,r,n,t);}function asyncGeneratorStep(n,t,e,r,o,a,c){try{var i=n[a](c),u=i.value;}catch(n){return void e(n);}i.done?t(u):Promise.resolve(u).then(r,o);}function _asyncToGenerator(n){return function(){var t=this,e=arguments;return new Promise(function(r,o){var a=n.apply(t,e);function _next(n){asyncGeneratorStep(a,r,o,_next,_throw,"next",n);}function _throw(n){asyncGeneratorStep(a,r,o,_next,_throw,"throw",n);}_next(void 0);});};}var CASES={countdown:{need:"做一个按钮，点击后开始 10 秒倒计时，倒计时期间按钮禁用并显示剩余秒数，结束后恢复可用",parse:{intent:"带倒计时的交互按钮",feats:["点击按钮触发倒计时","倒计时 10 秒","倒计时期间按钮禁用","实时显示剩余秒数","结束自动恢复可用"],tech:["HTML button","JS setInterval","状态锁定","CSS 过渡"],edge:["防止重复点击","倒计时归零清理定时器","恢复初始文案"]},design:{arch:["Button 容器","Timer 计时逻辑","State 状态锁"],state:"isCounting(布尔) · seconds(数字)",stack:"原生 JavaScript · 无依赖",style:"渐变背景 + 禁用态灰阶过渡"},code:"<!-- 倒计时按钮组件 -->\n<style>\n  .cd-btn{\n    padding:14px 38px;font-size:16px;font-weight:600;color:#fff;\n    border:none;border-radius:10px;cursor:pointer;\n    background:linear-gradient(135deg,#6366f1,#8b5cf6);\n    transition:all .25s;box-shadow:0 4px 14px rgba(99,102,241,.35);\n  }\n  .cd-btn:disabled{\n    background:#cbd1dd;cursor:not-allowed;box-shadow:none;transform:none;\n  }\n  .cd-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px}\n  .cd-tip{font-size:13px;color:#6b7280}\n</style>\n<div class=\"cd-wrap\">\n  <button class=\"cd-btn\" id=\"cdBtn\">获取验证码</button>\n  <div class=\"cd-tip\" id=\"cdTip\">点击按钮开始 10 秒倒计时</div>\n</div>\n<script>\n  const btn=document.getElementById('cdBtn');\n  const tip=document.getElementById('cdTip');\n  let timer=null;\n  btn.addEventListener('click',()=>{\n    if(btn.disabled) return;\n    let sec=10;\n    btn.disabled=true;\n    btn.textContent=sec+'s 后重试';\n    tip.textContent='倒计时进行中，请稍候…';\n    timer=setInterval(()=>{\n      sec--;\n      btn.textContent=sec+'s 后重试';\n      if(sec<=0){\n        clearInterval(timer);\n        btn.disabled=false;\n        btn.textContent='获取验证码';\n        tip.textContent='倒计时结束，可再次点击';\n      }\n    },1000);\n  });\n<\/script>"},quote:{need:"做一个名言卡片，显示一句随机名言，点击按钮换一句，切换时有淡入淡出动画",parse:{intent:"随机名言展示卡片",feats:["展示一句名言","点击按钮随机切换","淡入淡出过渡动画","名言与作者配对"],tech:["CSS opacity 过渡","随机数选取","数据数组"],edge:["避免连续重复同一句","动画期间防抖"]},design:{arch:["Card 卡片容器","Quote 文本区","Button 切换按钮"],state:"currentIndex(数字) · fading(布尔)",stack:"原生 JavaScript · CSS 动画",style:"卡片阴影 + 引号装饰 + 渐变按钮"},code:"<!-- 随机名言卡片组件 -->\n<style>\n  .q-card{\n    max-width:420px;margin:40px auto;padding:34px 30px;border-radius:16px;\n    background:#fff;box-shadow:0 10px 30px rgba(31,41,55,.1);\n    text-align:center;position:relative;overflow:hidden;\n  }\n  .q-card::before{\n    content:'“';position:absolute;top:-20px;left:18px;font-size:120px;\n    color:rgba(99,102,241,.12);font-family:Georgia,serif;line-height:1;\n  }\n  .q-text{font-size:18px;line-height:1.6;color:#1f2937;margin:18px 0 14px;\n    transition:opacity .35s;font-weight:500;position:relative;z-index:1}\n  .q-author{font-size:13px;color:#6366f1;font-weight:600;margin-bottom:22px;\n    transition:opacity .35s}\n  .q-btn{padding:10px 24px;font-size:14px;font-weight:600;color:#fff;\n    border:none;border-radius:8px;cursor:pointer;\n    background:linear-gradient(135deg,#6366f1,#8b5cf6);transition:transform .15s}\n  .q-btn:hover{transform:translateY(-1px)}\n  .fade{opacity:0}\n</style>\n<div class=\"q-card\">\n  <div class=\"q-text\" id=\"qText\">点击下方按钮，获取一句名言</div>\n  <div class=\"q-author\" id=\"qAuthor\">— 准备就绪 —</div>\n  <button class=\"q-btn\" id=\"qBtn\">🎲 换一句</button>\n</div>\n<script>\n  const quotes=[\n    {t:\"千里之行，始于足下。\",a:\"老子\"},\n    {t:\"保持饥饿，保持愚蠢。\",a:\"史蒂夫·乔布斯\"},\n    {t:\"简单是终极的复杂。\",a:\"达·芬奇\"},\n    {t:\"不要等待机会，而要创造机会。\",a:\"萧伯纳\"},\n    {t:\"认识你自己。\",a:\"苏格拉底\"},\n    {t:\"种一棵树最好的时间是十年前，其次是现在。\",a:\"谚语\"}\n  ];\n  const txt=document.getElementById('qText');\n  const aut=document.getElementById('qAuthor');\n  let last=-1;\n  function pick(){\n    let i;do{i=Math.floor(Math.random()*quotes.length)}while(i===last&&quotes.length>1);\n    last=i;\n    txt.classList.add('fade');aut.classList.add('fade');\n    setTimeout(()=>{\n      txt.textContent=quotes[i].t;\n      aut.textContent='— '+quotes[i].a+' —';\n      txt.classList.remove('fade');aut.classList.remove('fade');\n    },350);\n  }\n  document.getElementById('qBtn').addEventListener('click',pick);\n<\/script>"},todo:{need:"做一个待办事项列表，可以添加任务、勾选完成、删除任务，完成的任务显示删除线",parse:{intent:"待办事项管理列表",feats:["输入框添加任务","勾选标记完成","完成项显示删除线","单条删除","空列表提示"],tech:["DOM 动态渲染","数组状态管理","事件委托","localStorage 可选"],edge:["空输入不添加","删除后重新渲染","完成态切换"]},design:{arch:["Input 输入区","List 列表渲染","Item 单项(勾选+文本+删除)"],state:"todos(数组) · {id,text,done}",stack:"原生 JavaScript · CSS",style:"卡片式 + 勾选圆圈 + 悬停删除按钮"},code:"<!-- 待办清单组件 -->\n<style>\n  .todo{max-width:420px;margin:36px auto;background:#fff;border-radius:14px;\n    box-shadow:0 8px 26px rgba(31,41,55,.08);overflow:hidden}\n  .todo-head{padding:18px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}\n  .todo-head h3{font-size:16px;margin-bottom:12px}\n  .todo-add{display:flex;gap:8px}\n  .todo-add input{flex:1;padding:9px 12px;border:none;border-radius:8px;font-size:14px}\n  .todo-add button{padding:0 16px;border:none;border-radius:8px;background:#fff;\n    color:#6366f1;font-weight:700;cursor:pointer;font-size:14px}\n  .todo-list{list-style:none;padding:8px 0;max-height:280px;overflow-y:auto}\n  .todo-list li{display:flex;align-items:center;gap:11px;padding:11px 20px;\n    border-bottom:1px solid #f0f1f5;transition:background .15s}\n  .todo-list li:hover{background:#fafbfd}\n  .todo-list li .cb{width:20px;height:20px;border:2px solid #cbd1dd;border-radius:50%;\n    cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;\n    transition:all .2s}\n  .todo-list li.done .cb{background:#10b981;border-color:#10b981;color:#fff}\n  .todo-list li.done .tx{text-decoration:line-through;color:#9ca3af}\n  .todo-list li .tx{flex:1;font-size:14px;color:#1f2937}\n  .todo-list li .del{opacity:0;color:#ef4444;cursor:pointer;font-size:16px;\n    transition:opacity .15s;border:none;background:none}\n  .todo-list li:hover .del{opacity:1}\n  .todo-empty{text-align:center;color:#9ca3af;padding:30px;font-size:13px}\n</style>\n<div class=\"todo\">\n  <div class=\"todo-head\">\n    <h3>📝 我的待办</h3>\n    <div class=\"todo-add\">\n      <input id=\"tdInput\" placeholder=\"输入任务后回车添加…\">\n      <button id=\"tdAdd\">添加</button>\n    </div>\n  </div>\n  <ul class=\"todo-list\" id=\"tdList\"></ul>\n</div>\n<script>\n  const input=document.getElementById('tdInput');\n  const list=document.getElementById('tdList');\n  let todos=[{id:1,text:\"体验这个 Demo\",done:true},{id:2,text:\"点勾选圆圈完成任务\",done:false}];\n  function render(){\n    if(!todos.length){list.innerHTML='<div class=\"todo-empty\">暂无任务，添加一个吧 ✨</div>';return}\n    list.innerHTML=todos.map(t=>'<li class=\"'+(t.done?'done':'')+'\">'+\n      '<div class=\"cb\" data-id=\"'+t.id+'\">'+(t.done?'✓':'')+'</div>'+\n      '<span class=\"tx\">'+t.text+'</span>'+\n      '<button class=\"del\" data-del=\"'+t.id+'\">×</button></li>').join('');\n  }\n  function add(){\n    const v=input.value.trim();if(!v)return;\n    todos.push({id:Date.now(),text:v,done:false});input.value='';render();\n  }\n  document.getElementById('tdAdd').addEventListener('click',add);\n  input.addEventListener('keydown',e=>{if(e.key==='Enter')add()});\n  list.addEventListener('click',e=>{\n    const id=Number(e.target.dataset.id);\n    const did=Number(e.target.dataset.del);\n    if(id){const t=todos.find(x=>x.id===id);if(t){t.done=!t.done;render()}}\n    if(did){todos=todos.filter(x=>x.id!==did);render()}\n  });\n  render();\n<\/script>"},palette:{need:"做一个调色板，展示一组预设颜色，点击颜色块显示其十六进制值并复制到剪贴板",parse:{intent:"颜色选择与复制工具",feats:["展示预设颜色网格","点击选中颜色","显示十六进制值","一键复制到剪贴板","复制成功提示"],tech:["Clipboard API","CSS Grid 布局","点击选中态"],edge:["复制失败降级提示","选中高亮","hover 预览"]},design:{arch:["Palette 颜色网格","Preview 选中预览","Toast 复制提示"],state:"selected(颜色值) · copied(布尔)",stack:"原生 JavaScript · Clipboard API",style:"圆角色块 + 选中描边 + 顶部预览条"},code:"<!-- 颜色调色板组件 -->\n<style>\n  .pal{max-width:440px;margin:36px auto;background:#fff;border-radius:14px;\n    box-shadow:0 8px 26px rgba(31,41,55,.08);overflow:hidden}\n  .pal-prev{padding:22px;display:flex;align-items:center;gap:16px;\n    background:var(--c,#6366f1);color:#fff;transition:background .35s}\n  .pal-prev .hex{font-size:22px;font-weight:800;font-family:monospace;letter-spacing:1px}\n  .pal-prev .lbl{font-size:12px;opacity:.85;margin-left:auto}\n  .pal-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:16px}\n  .pal-cell{aspect-ratio:1;border-radius:8px;cursor:pointer;border:3px solid transparent;\n    transition:transform .15s,border-color .15s}\n  .pal-cell:hover{transform:scale(1.08)}\n  .pal-cell.sel{border-color:#1f2937;transform:scale(1.05)}\n  .pal-toast{text-align:center;padding:9px;font-size:13px;color:#10b981;\n    background:rgba(16,185,129,.08);opacity:0;transition:opacity .3s;height:0;overflow:hidden}\n  .pal-toast.show{opacity:1;height:auto;padding:9px}\n</style>\n<div class=\"pal\">\n  <div class=\"pal-prev\" id=\"palPrev\">\n    <span class=\"hex\" id=\"palHex\">#6366F1</span>\n    <span class=\"lbl\">点击下方色块选择并复制</span>\n  </div>\n  <div class=\"pal-grid\" id=\"palGrid\"></div>\n  <div class=\"pal-toast\" id=\"palToast\">✓ 已复制到剪贴板</div>\n</div>\n<script>\n  const colors=['#EF4444','#F59E0B','#10B981','#06B6D4','#6366F1','#8B5CF6',\n    '#EC4899','#84CC16','#14B8A6','#3B82F6','#A855F7','#F97316'];\n  const grid=document.getElementById('palGrid');\n  const prev=document.getElementById('palPrev');\n  const hexEl=document.getElementById('palHex');\n  const toast=document.getElementById('palToast');\n  let cur='#6366F1';\n  grid.innerHTML=colors.map(c=>'<div class=\"pal-cell\" data-c=\"'+c+'\" style=\"background:'+c+'\"></div>').join('');\n  function select(c){\n    cur=c;hexEl.textContent=c.toUpperCase();prev.style.setProperty('--c',c);\n    [...grid.children].forEach(el=>el.classList.toggle('sel',el.dataset.c===c));\n  }\n  function copy(c){\n    if(navigator.clipboard){navigator.clipboard.writeText(c).then(ok)}\n    else{ok()}\n  }\n  function ok(){toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1500)}\n  grid.addEventListener('click',e=>{\n    const c=e.target.dataset.c;if(!c)return;select(c);copy(c);\n  });\n  select(cur);\n<\/script>"}};var $=function $(id){return document.getElementById(id);};var sleep=function sleep(ms){return new Promise(function(r){return setTimeout(r,ms);});};function setState(id,txt,cls){var el=$(id);el.textContent=txt;el.className='stage-state '+(cls||'');}function setStage(id,mode){var el=$(id);el.classList.remove('active','done');if(mode==='active')el.classList.add('active');if(mode==='done')el.classList.add('done');}function highlight(code){code=code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');code=code.replace(/(&lt;!--[\s\S]*?--&gt;)/g,'<span class="tok-com">$1</span>');code=code.replace(/(\/\*[\s\S]*?\*\/)/g,'<span class="tok-com">$1</span>');code=code.replace(/('[^']*'|"[^"]*")/g,'<span class="tok-str">$1</span>');code=code.replace(/\b(const|let|var|function|return|if|else|for|while|new|setTimeout|setInterval|clearInterval|document|navigator)\b/g,'<span class="tok-kw">$1</span>');code=code.replace(/\b(\d+)\b/g,'<span class="tok-num">$1</span>');return code;}var running=false;function runPipeline(_x){return _runPipeline.apply(this,arguments);}function _runPipeline(){_runPipeline=_asyncToGenerator(_regenerator().m(function _callee(key){var c,data,codeEl,frame;return _regenerator().w(function(_context){while(1)switch(_context.n){case 0:if(!running){_context.n=1;break;}return _context.a(2);case 1:c=CASES[key];if(!c){}data=c||matchCustom($('need').value);running=true;$('genBtn').disabled=true;$('hint').textContent='生成中…';$('pipeline').classList.add('active');['s1','s2','s3','s4'].forEach(function(s){setStage(s,'');setState(s+'state','等待中','');});setStage('s1','active');setState('s1state','解析中','running');$('p-intent').textContent=data.parse.intent;$('p-feats').innerHTML=data.parse.feats.map(function(f){return'<li>'+f+'</li>';}).join('');$('p-tech').innerHTML=data.parse.tech.map(function(t){return'<span class="t">'+t+'</span>';}).join('');$('p-edge').innerHTML=data.parse.edge.map(function(t){return'<span>'+t+'</span>';}).join('');_context.n=2;return sleep(900);case 2:setState('s1state','✓ 解析完成','ok');setStage('s1','done');_context.n=3;return sleep(250);case 3:setStage('s2','active');setState('s2state','设计中','running');$('d-arch').innerHTML=data.design.arch.map(function(n){return'<span class="node">'+n+'</span>';}).join('');$('d-state').textContent=data.design.state;$('d-stack').textContent=data.design.stack;$('d-style').textContent=data.design.style;_context.n=4;return sleep(950);case 4:setState('s2state','✓ 方案就绪','ok');setStage('s2','done');_context.n=5;return sleep(250);case 5:setStage('s3','active');setState('s3state','生成中','running');codeEl=$('code-out');codeEl.innerHTML='';_context.n=6;return typewriter(codeEl,data.code,8);case 6:setState('s3state','✓ 生成完成','ok');setStage('s3','done');_context.n=7;return sleep(300);case 7:setStage('s4','active');setState('s4state','运行中','running');frame=$('run-frame');frame.srcdoc=data.code;_context.n=8;return sleep(700);case 8:$('run-meta').innerHTML=['<span>✓ 编译通过</span>','<span>✓ 0 错误 / 0 警告</span>','<span>✓ 组件已加载</span>','<span>▶ 可在上方交互</span>'].join('');setState('s4state','✓ 运行成功','ok');setStage('s4','done');$('hint').textContent='生成完成，可在预览区与组件交互';running=false;$('genBtn').disabled=false;case 9:return _context.a(2);}},_callee);}));return _runPipeline.apply(this,arguments);}function typewriter(_x2,_x3,_x4){return _typewriter.apply(this,arguments);}function _typewriter(){_typewriter=_asyncToGenerator(_regenerator().m(function _callee2(el,code,speed){var total,i,step,cur;return _regenerator().w(function(_context2){while(1)switch(_context2.n){case 0:total=code.length;i=0;case 1:if(!(i<total)){_context2.n=3;break;}step=Math.max(2,Math.floor(total/180));i=Math.min(total,i+step);cur=code.slice(0,i);el.innerHTML=highlight(cur)+'<span class="cur"></span>';_context2.n=2;return sleep(speed);case 2:_context2.n=1;break;case 3:el.innerHTML=highlight(code);case 4:return _context2.a(2);}},_callee2);}));return _typewriter.apply(this,arguments);}function matchCustom(text){var t=text.toLowerCase();if(/倒计时|验证码|秒/.test(t))return CASES.countdown;if(/名言|句子|语录|随机.*文/.test(t))return CASES.quote;if(/待办|todo|清单|任务|todo/.test(t))return CASES.todo;if(/颜色|调色|color|palette|复制/.test(t))return CASES.palette;var base=JSON.parse(JSON.stringify(CASES.countdown));base.parse.intent='自定义交互组件（已匹配通用模板）';base.need=text;return base;}document.querySelectorAll('.examples button').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.case;$('need').value=CASES[k].need;$('hint').textContent='已填入示例需求，点击「开始生成」';});});$('genBtn').addEventListener('click',function(){var v=$('need').value.trim();if(!v){$('hint').textContent='⚠ 请先输入需求或选择示例';return;}runPipeline(null);});$('resetBtn').addEventListener('click',function(){if(running)return;$('need').value='';$('pipeline').classList.remove('active');['s1','s2','s3','s4'].forEach(function(s){setStage(s,'');setState(s+'state','等待中','');});$('code-out').innerHTML='';$('run-frame').srcdoc='';$('run-meta').innerHTML='';$('hint').textContent='选择示例或自行输入需求';});$('need').value=CASES.countdown.need;</script>
+</body>
+</html>

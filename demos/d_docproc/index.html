@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="T200wLS0tqAITZc81qSPEj">
+<head data-page-node-id="CsRfZFBRriaYMxz7FFRUc0">
+<meta charset="UTF-8" data-page-node-id="dYUlkrDKqrRY7NOHMBTalN">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="PrETie2Epa4U80UmRdtJev">
+<title>WorkBuddy 文档处理 - 通用办公场景 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #2c3e50;
+    line-height: 1.6;
+    padding: 20px;
+  }
+
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  /* 头部 */
+  .header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 12px;
+    margin-bottom: 30px;
+    color: #fff;
+  }
+  .header h1 { font-size: 28px; font-weight: 600; margin-bottom: 10px; }
+  .header p { color: #94a3b8; font-size: 15px; }
+  .header .badge {
+    display: inline-block;
+    background: rgba(59,130,246,0.15);
+    color: #93c5fd;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-top: 12px;
+    border: 1px solid rgba(59,130,246,0.25);
+  }
+
+  /* 场景卡片 */
+  .scene-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+  }
+  .scene-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+  .scene-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  }
+  .scene-card.active {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 28px rgba(59,130,246,0.15);
+  }
+  .scene-icon {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 21px; margin-bottom: 12px;
+  }
+  .scene-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #1e293b; }
+  .scene-desc { font-size: 13px; color: #64748b; line-height: 1.55; }
+  .scene-tag {
+    display: inline-block;
+    background: #eff6ff; color: #3b82f6;
+    padding: 2px 10px; border-radius: 12px;
+    font-size: 11px; margin-top: 10px;
+  }
+
+  /* 演示区域 */
+  .demo-area {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    min-height: 480px;
+    display: none;
+  }
+  .demo-area.show {
+    display: block;
+    animation: fadeIn 0.35s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .demo-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .demo-title { font-size: 19px; font-weight: 600; color: #1e293b; }
+  .demo-subtitle { font-size: 13px; color: #94a3b8; }
+
+  /* 按钮 */
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .btn {
+    padding: 9px 20px; border: none; border-radius: 8px;
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    font-weight: 500; font-family: inherit;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-secondary { background: #f1f5f9; color: #475569; }
+  .btn-secondary:hover { background: #e2e8f0; }
+
+  /* 结果面板 */
+  .result-panel {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 20px; min-height: 180px;
+  }
+  .result-item {
+    padding: 11px 15px; background: #fff; border-radius: 6px;
+    margin-bottom: 8px; border-left: 3px solid #3b82f6;
+    opacity: 0; transform: translateX(-16px); transition: all 0.3s ease;
+  }
+  .result-item.show { opacity: 1; transform: translateX(0); }
+  .result-label { font-size: 12px; color: #94a3b8; margin-bottom: 3px; }
+  .result-value { font-size: 14px; color: #1e293b; font-weight: 500; }
+
+  /* 文档预览 */
+  .doc-preview {
+    background: #fff; border: 1px solid #d1d5db;
+    border-radius: 8px; padding: 28px 36px;
+    min-height: 280px; box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    position: relative; overflow: hidden;
+  }
+  .doc-preview h2 {
+    font-size: 19px; color: #1e293b; text-align: center;
+    margin-bottom: 18px; padding-bottom: 10px;
+    border-bottom: 2px solid #3b82f6;
+  }
+  .doc-preview h3 { font-size: 14px; color: #334155; margin: 14px 0 7px 0; }
+  .doc-preview p { font-size: 13.5px; color: #475569; text-indent: 2em; margin-bottom: 9px; line-height: 1.85; }
+  .doc-preview ul, .doc-preview ol { padding-left: 2em; margin: 8px 0; font-size: 13.5px; color: #475569; line-height: 2; }
+  .doc-preview table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  .doc-preview th, .doc-preview td { border: 1px solid #d1d5db; padding: 7px 11px; text-align: left; }
+  .doc-preview th { background: #f8fafc; font-weight: 600; color: #1e293b; }
+
+  /* 进度条 */
+  .progress-bar {
+    height: 4px; background: #e2e8f0; border-radius: 2px;
+    overflow: hidden; margin: 14px 0;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    width: 0; transition: width 0.5s ease;
+  }
+
+  /* 状态提示 */
+  .status-tip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 15px; background: #eff6ff; border-radius: 8px;
+    font-size: 13px; color: #1e40af; margin-bottom: 16px;
+  }
+  .status-dot {
+    width: 7px; height: 7px; background: #3b82f6;
+    border-radius: 50%; animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* 扫描线 */
+  .scan-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    animation: scan 1.5s ease-in-out infinite;
+  }
+  @keyframes scan { 0%{top:0;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+
+  /* 打字光标 */
+  .typing-cursor::after { content: '|'; animation: blink 0.8s infinite; color: #3b82f6; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* 标签云 */
+  .capability-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .cap-tag {
+    padding: 5px 13px; background: #f1f5f9; border-radius: 16px;
+    font-size: 12px; color: #475569; border: 1px solid #e2e8f0;
+  }
+  .cap-tag.highlight { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+
+  /* 返回按钮 */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 14px; background: transparent;
+    border: 1px solid #d1d5db; border-radius: 6px;
+    color: #6b7280; font-size: 13px; cursor: pointer;
+    margin-bottom: 14px; transition: all 0.2s; font-family: inherit;
+  }
+  .back-btn:hover { background: #f9fafb; color: #374151; }
+
+  /* 两栏 */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* 输入框 */
+  .input-area {
+    width: 100%; min-height: 90px; padding: 12px;
+    border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: 14px; resize: vertical; font-family: inherit; line-height: 1.65;
+  }
+  .input-area:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+  /* 步骤指示器 */
+  .steps { display: flex; gap: 6px; margin-bottom: 18px; }
+  .step {
+    flex: 1; text-align: center; padding: 9px;
+    background: #f1f5f9; border-radius: 8px;
+    font-size: 12px; color: #94a3b8;
+  }
+  .step.active { background: #eff6ff; color: #2563eb; font-weight: 500; }
+  .step.done { background: #f0fdf4; color: #16a34a; }
+
+  /* 信息卡片 */
+  .info-card {
+    background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 14px; margin-bottom: 10px;
+  }
+  .info-card-title { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  .info-card-content { font-size: 14px; color: #1e293b; font-weight: 500; }
+
+  /* 状态标签 */
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 500;
+  }
+  .tag-green { background: #dcfce7; color: #166534; }
+  .tag-yellow { background: #fef9c3; color: #854d0e; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+
+  /* 底部 */
+  .footer-note { text-align: center; padding: 22px; color: #94a3b8; font-size: 13px; }
+</style>
+</head>
+<body data-page-node-id="8FRdFW1fk18TOffGSZtaSM">
+
+<div class="container" data-page-node-id="QARH0ZEgvJn2O5ER5xHmBt">
+
+  <!-- 头部 -->
+  <div class="header" data-page-node-id="ib4zkRLOv8PnmKDJaYDb81">
+    <h1 data-page-node-id="ASjbHHBTy69rdRyOvUiiGs">WorkBuddy 文档处理</h1>
+    <p data-page-node-id="jCby7gFdupVsb6fHGAjc39">通用办公场景 · AI 驱动的智能文档工作流</p>
+    <span class="badge" data-page-node-id="7zuDZkM2ZWHzOstarlmF0X">交互式演示 Demo</span>
+  </div>
+
+  <!-- 场景选择 -->
+  <div class="scene-grid" id="sceneGrid" data-page-node-id="6U5LgtUxh1L0LnnGulcQF1">
+
+    <div class="scene-card" data-scene="create" onclick="selectScene('create')" data-page-node-id="JVsLKdDw5CGdWcZBTRMGZF">
+      <div class="scene-icon" data-page-node-id="iIDVFjduAjMmiI2VahMzRY">📝</div>
+      <div class="scene-title" data-page-node-id="tz5SpLA2ryiHVafhSDLGL7">文档生成</div>
+      <div class="scene-desc" data-page-node-id="dTFDGhanU1MSy5U47d5fx6">输入需求或大纲，一键生成会议纪要、周报、方案、报告等专业文档，支持多种文档类型</div>
+      <span class="scene-tag" data-page-node-id="OJKdnWbVO0c6tm66bQ1QFf">AI 生成 · 多类型支持</span>
+    </div>
+
+    <div class="scene-card" data-scene="extract" onclick="selectScene('extract')" data-page-node-id="sR8nduoLpi3lKdy9EJKYMQ">
+      <div class="scene-icon" data-page-node-id="5XRfs8kFPlpaExkq87eeaW">🔍</div>
+      <div class="scene-title" data-page-node-id="Hn26FBiGJvRXVoFPV6CdjE">内容智能提取</div>
+      <div class="scene-desc" data-page-node-id="qQG2KprNuC4JIMs9TG0rPG">从长文档/PDF/图片中快速提取关键信息、数据表格和核心观点，自动生成结构化摘要</div>
+      <span class="scene-tag" data-page-node-id="7SLhT4MFb7BiobsIvCT8wC">结构化抽取 · 自动总结</span>
+    </div>
+
+    <div class="scene-card" data-scene="convert" onclick="selectScene('convert')" data-page-node-id="hyDpEIiCX24rI12zh08f5t">
+      <div class="scene-icon" data-page-node-id="S2u3mIYOwq48dRZeerinPB">🔄</div>
+      <div class="scene-title" data-page-node-id="Pn96EECT7CU3fdYlm3bhm4">格式智能转换</div>
+      <div class="scene-desc" data-page-node-id="PdVHn0gDpUJNQ1CemQCoCS">PDF ↔ Word ↔ Excel ↔ Markdown 自由转换，保持排版格式，支持批量处理</div>
+      <span class="scene-tag" data-page-node-id="UsN57MBrSAwYMFXLhtp68C">无损转换 · 批量处理</span>
+    </div>
+
+    <div class="scene-card" data-scene="template" onclick="selectScene('template')" data-page-node-id="AxgkacEdT1G8QcO64PLQdZ">
+      <div class="scene-icon" data-page-node-id="SeRbUikyqV8y1DTL2W7xUp">📋</div>
+      <div class="scene-title" data-page-node-id="yvFIpGrGzGz063YHtT9BQt">模板批量填充</div>
+      <div class="scene-desc" data-page-node-id="e26CLEvMmO4hNcXtUGLbxR">基于预设模板 + 数据源，批量生成通知函、报价单、合同等业务文档，变量自动替换</div>
+      <span class="scene-tag" data-page-node-id="RI32DCrbPVQCHR1dEXGBP9">变量替换 · 批量生成</span>
+    </div>
+
+    <div class="scene-card" data-scene="review" onclick="selectScene('review')" data-page-node-id="VICBX09u4EqFvyZOQuSOMv">
+      <div class="scene-icon" data-page-node-id="sxchXa6aDItpHj7pfE5EQw">✅</div>
+      <div class="scene-title" data-page-node-id="ddP2690LGbH8M0Dh73aJ9O">文档审阅校对</div>
+      <div class="scene-desc" data-page-node-id="7LmJEviixf7GQqDb07DNxI">自动检查错别字、语法错误、格式规范问题，给出修改建议，提升文档质量</div>
+      <span class="scene-tag" data-page-node-id="lIMrobfX3A18kHNZURxSFU">智能校对 · 质量检测</span>
+    </div>
+
+    <div class="scene-card" data-scene="compare" onclick="selectScene('compare')" data-page-node-id="ZcBWryodk3wuY74gI1P7A9">
+      <div class="scene-icon" data-page-node-id="9k5I2MiMWjtTcIIAG3G3Kh">⚖️</div>
+      <div class="scene-title" data-page-node-id="ajaQ4bjw1Cu6W2hO5y0eBE">版本对比分析</div>
+      <div class="scene-desc" data-page-node-id="rJILMvRlPoajrNEKi9FA5t">对比两版文档差异，高亮变更内容（增/删/改），自动生成变更摘要与统计</div>
+      <span class="scene-tag" data-page-node-id="DDiDB3d0CrtYQuc8ES6kgu">差异标记 · 变更追踪</span>
+    </div>
+
+  </div>
+
+  <!-- 演示区域 -->
+  <div class="demo-area" id="demoArea" data-page-node-id="XaRnjaxB1YGocDzkvWUX8V">
+
+    <!-- ========== 场景1：文档生成 ========== -->
+    <div id="demo-create" class="demo-content" style="display:none;" data-page-node-id="LngxLrmu6i4uC7dWwbad4f">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="2nngDp4IYYWN2VVk5kVRYv">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="HuuZd5GTkMa7yfTjhHWAGW">
+        <div data-page-node-id="581acOv1T58ZB3o7BQ6DRt">
+          <div class="demo-title" data-page-node-id="9qfsRigNbfuk5HBMIhXxCL">文档生成</div>
+          <div class="demo-subtitle" data-page-node-id="GH0rJTiGUX3MsC7Z6WRACt">输入需求 → AI 分析 → 生成专业文档</div>
+        </div>
+      </div>
+
+      <div class="status-tip" data-page-node-id="yxGaeaGAE3CVW9DKcRmLuG"><span class="status-dot" data-page-node-id="wbW9oMEzCY4D6UyXxJKs0P"></span><span data-page-node-id="MRCOLWFrjdIl7IVhFd59xf">输入你的文档需求，WorkBuddy 自动生成结构完整、格式规范的专业文档</span></div>
+
+      <div style="margin-bottom: 18px;" data-page-node-id="yJuWumaEykdnvILgt8fKWM">
+        <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 7px;" data-page-node-id="Z1U5qWAXGUQrmvEnsRQi5s">输入需求描述（示例已预填）：</label>
+        <textarea class="input-area" id="createInput" style="height:120px;">帮我整理一份会议总结：
+
+会议主题：Q3 产品规划评审会
+时间：2026年9月1日 14:00-16:00
+参会人：产品中心、研发中心、设计团队
+主要讨论：
+1. 确定了二期三个模块的优先级排序
+2. 数据看板方案通过，下周启动开发
+3. 移动端适配推迟到 Q4
+待办事项：张三出详细排期，李四确认技术方案</textarea>
+      </div>
+
+      <div class="btn-group" data-page-node-id="VdUMprD5vYDTVhphnWxl3q">
+        <button class="btn btn-primary" onclick="runDocCreate()" data-page-node-id="xhLkY4RNFe2hKXu2TaP4Gu">✨ 生成文档</button>
+        <button class="btn btn-secondary" onclick="clearCreateResult()" data-page-node-id="THCcl2NUS0GRhDSecOxKHD">清空重置</button>
+      </div>
+
+      <div class="progress-bar" data-page-node-id="IXlwUhuUmLsI0UMhRkPjOx"><div class="progress-fill" id="createProgress" data-page-node-id="z41ctZDketfmpS1VtGC4to"></div></div>
+
+      <div id="createResult" class="result-panel" style="display:none;" data-page-node-id="qZWJMk21aEj8iA9WtOwOkV">
+        <div class="doc-preview" id="docPreview" data-page-node-id="6HxLzIX3hu8ZRtK5ebTRwi"></div>
+      </div>
+    </div>
+
+    <!-- ========== 场景2：内容智能提取 ========== -->
+    <div id="demo-extract" class="demo-content" style="display:none;" data-page-node-id="MCWtzOIzMFtcAOFWEWbv3p">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="BZN5GmuGcd8LSYvksaJxN8">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="bXYXvEh3gZVnKzsiA453e3">
+        <div data-page-node-id="8p13SlCJayP9WST2BaBXGw">
+          <div class="demo-title" data-page-node-id="wvY4nZloSngOE0RCIGW8GR">内容智能提取</div>
+          <div class="demo-subtitle" data-page-node-id="aZGNOUPVIH2arFyYNUx4di">上传文档 → AI 解析 → 结构化输出关键信息</div>
+        </div>
+      </div>
+
+      <div class="status-tip" data-page-node-id="QGivjhNxMjR30xpdEpAIN3"><span class="status-dot" data-page-node-id="Vx8GifSd4oEZNNgrIsaGZ7"></span><span data-page-node-id="ht3mg9OcqKhobAPxS0IlWN">模拟上传一份长文档，WorkBuddy 自动提取并结构化所有关键信息</span></div>
+
+      <div class="two-col" style="margin-bottom: 18px;" data-page-node-id="8pFyAVweWKXqfLaa9B8hAh">
+        <div data-page-node-id="g0XW8SsUfMaUTHp0jweMUO">
+          <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 7px;" data-page-node-id="AzrSWgrbbuNLeyH9J8JRGS">原始文档（模拟）：</label>
+          <div class="result-panel" style="min-height: 200px; font-size: 12.5px; line-height: 1.85; color: #475569;" data-page-node-id="RpM3V3kfI4bqZCyN4v7WG2">
+            <strong style="font-size:14px;color:#1e293b;" data-page-node-id="qfUcwfhJODvcqCKhRuUX1y">关于启动智慧零售平台二期建设的请示</strong><br data-page-node-id="aCkkIsvPOla1mOxsja2HEH"><br data-page-node-id="1nkfCRvPSQP9PYBbiaWxg7">
+            尊敬的领导：<br data-page-node-id="CoXRyjyR2sS93aUTbGLSSH"><br data-page-node-id="Cy55B1bSAVDYX77uIvHFBL">
+            随着业务快速发展，现有平台在商品管理、订单履约及数据分析方面已无法满足日益增长的需求。为支撑未来三年业务规划，特申请启动平台二期建设项目。<br data-page-node-id="6poOZMUYtGyTTef7dlLMEV"><br data-page-node-id="BKbJtiCYusfe3QpgmLOHP3">
+            <strong data-page-node-id="zlYFAuzz3enVHPVDVBX0om">一、建设目标</strong><br data-page-node-id="sTDsHveDBm65NUeAfvtRUz">
+            完成商品管理模块重构、订单履约流程优化、数据分析看板升级三大核心能力建设，预计上线后运营效率提升 30%。<br data-page-node-id="KZFddC0gO0ktl94nKBDwkI"><br data-page-node-id="JVcZGMR20yaSjAvBpY1G7n">
+            <strong data-page-node-id="rADa4dy28xNHKhvCkPBv7Y">二、预算估算</strong><br data-page-node-id="rIUaaHqqxPcWQfcZ0DlsTO">
+            项目总预算为人民币 180 万元，其中开发人力成本 120 万元，服务器及基础设施 40 万元，其他费用 20 万元。项目建设周期预计 6 个月。<br data-page-node-id="HPNDwSxB1DxBAp25iJq7Oq"><br data-page-node-id="RnSGrU9Slso1CxeiLTnDNu">
+            <strong data-page-node-id="rgLwGlRwCSHqjhmgU1dvvq">三、资源需求</strong><br data-page-node-id="pZYe572tmbeU1OiGg9VlSV">
+            需协调后端开发 4 人、前端开发 3 人、测试工程师 2 人、产品经理 1 人。<br data-page-node-id="OFbMkZH2fezs3SXPWKPbif"><br data-page-node-id="cJE8GgIi9H3dnpfarNqqkD">
+            妥否，请批示。<br data-page-node-id="D72rKgNkC44M6smxrDvVvP"><br data-page-node-id="PCIAblaL4KTgGZYSNQSjYj">
+            <div style="text-align:right;" data-page-node-id="woVC9Rbt1Uqx1PtT1wqdfr">产品中心<br data-page-node-id="fCERX1m9So4dK7h3xYWxxl">2026 年 8 月 28 日</div>
+          </div>
+        </div>
+        <div data-page-node-id="HqrjL9xyDkR1c7uVbdL9iO">
+          <label style="font-size: 13px; color: #64748b; display: block; margin-bottom: 7px;" data-page-node-id="EpDQzt93r7E84HuAMQp9M6">提取结果：</label>
+          <div class="result-panel" id="extractResult" style="min-height: 200px;" data-page-node-id="uOwJePtXGFsgBKGTDhU1Ia"></div>
+        </div>
+      </div>
+
+      <div class="btn-group" data-page-node-id="hBzhLUBvavwkzgTuI5rABO">
+        <button class="btn btn-primary" onclick="runExtract()" data-page-node-id="CgKByb77X6oWqpKVumQZ8U">🔍 开始提取</button>
+        <button class="btn btn-secondary" onclick="clearExtractResult()" data-page-node-id="JiqQcN8SPYt39zzYBfExZV">清空</button>
+      </div>
+    </div>
+
+    <!-- ========== 场景3：格式智能转换 ========== -->
+    <div id="demo-convert" class="demo-content" style="display:none;" data-page-node-id="tCkT1qUCyI5rzkUsFX0yXk">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="OlSytpIYvc9HWm32EB553N">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="yxLnm4pxhiTzKZYEyGaaaZ">
+        <div data-page-node-id="AZCcFMCbyfxGd7sL10b3eX">
+          <div class="demo-title" data-page-node-id="iIEhw5LulQB8Jbd5kSLdew">格式智能转换</div>
+          <div class="demo-subtitle" data-page-node-id="l22ueHaJwSFBDqBnu9zFOk">选择源文件 → 选择目标格式 → 一键转换</div>
+        </div>
+      </div>
+
+      <div class="status-tip" data-page-node-id="IyCO4iDOqo3JAIo3GuAF54"><span class="status-dot" data-page-node-id="K7C3mdbd4DWJpazmCOsjUm"></span><span data-page-node-id="3c8RFSo28hoFpGaVfvlPCV">支持 PDF / Word / Excel / Markdown / HTML 等多种格式互转，保持排版格式完整</span></div>
+
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px;" data-page-node-id="tUYUO6Bq3evVKpRMG72KsZ">
+        <div style="flex:1;text-align:center;padding:28px;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;" data-page-node-id="22rVFnibmHaRTR5i075ITp">
+          <div style="font-size:44px;margin-bottom:8px;" data-page-node-id="StzvZ4HEFvU1QmBCHjs6KW">📄</div>
+          <div style="font-weight:600;color:#334155;font-size:14px;" data-page-node-id="bdGXcZRaAHXkGJtEVPncvw">源文件</div>
+          <div id="sourceFormat" style="color:#3b82f6;font-size:17px;margin:6px 0;" data-page-node-id="wfCMG8Ga0z73UqBmUvw0A9">Word (.docx)</div>
+          <div style="font-size:12px;color:#94a3b8;" data-page-node-id="D0AkANGenMD5Rli1vUo8DR">项目方案_v2.docx · 2.3MB</div>
+        </div>
+        
+        <div style="font-size:26px;color:#3b82f6;flex-shrink:0;" data-page-node-id="QTfrkBxQ0VzilBkOPbwyg7">→</div>
+        
+        <div style="flex:1;text-align:center;padding:28px;background:#f8fafc;border-radius:8px;border:1px dashed #cbd5e1;" data-page-node-id="OHvZDe8pMwbo0BA1GTkwCU">
+          <div style="font-size:44px;margin-bottom:8px;" data-page-node-id="Nkv9fqmlCPEqXf2SyFYW77">📑</div>
+          <div style="font-weight:600;color:#334155;font-size:14px;" data-page-node-id="iOY0FQkGIRbsEpDxIQZaPJ">目标格式</div>
+          <div id="targetFormat" style="color:#3b82f6;font-size:17px;margin:6px 0;" data-page-node-id="fB3S7DvYzHcDAVfACHdRFo">PDF</div>
+          <div style="font-size:12px;color:#94a3b8;" data-page-node-id="NFBGFOIGADGXFqB0vNBPPs">保持排版 + 目录生成</div>
+        </div>
+      </div>
+
+      <div class="btn-group" style="justify-content:center;" data-page-node-id="FyUeboP0OoNoO1HYHqph73">
+        <button class="btn btn-primary" onclick="runConvert()" data-page-node-id="72a5tuDAqnwRz8JFGvAAYB">🔄 开始转换</button>
+      </div>
+
+      <div id="convertResult" style="margin-top: 20px; display: none;" data-page-node-id="kBMCDAqsWbAN9Oz74jhvT7">
+        <div class="result-panel" style="text-align:center;padding:36px;" data-page-node-id="aI4n6uQNv018Ieuf3Fz8p6">
+          <div style="font-size:44px;margin-bottom:10px;" data-page-node-id="nPG0M0UsdfIxERKWkeKK4c">✅</div>
+          <div style="font-size:16px;font-weight:600;color:#16a34a;margin-bottom:6px;" data-page-node-id="U4xff6qMZhXaaSsFB94wVt">转换成功！</div>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:16px;" data-page-node-id="ohfcB2eeUVwl0HSiCqgGHW">项目方案_v2.pdf 已生成（2.1MB）</div>
+          <div class="capability-tags" style="justify-content:center;" data-page-node-id="ayGQfaaRGuDwupZ8BKrHnF">
+            <span class="cap-tag highlight" data-page-node-id="NyZlxNBWhkjgGhItDROo7X">排版保留 ✓</span>
+            <span class="cap-tag highlight" data-page-node-id="2uuAhDmIhPZCXwclkMQF9p">表格完整 ✓</span>
+            <span class="cap-tag highlight" data-page-node-id="1LXQPcpyPUpU1GuKmoP9J1">图片嵌入 ✓</span>
+            <span class="cap-tag highlight" data-page-node-id="Gh0CV3G4pmG9vp7nVuOAI5">目录生成 ✓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 场景4：模板批量填充 ========== -->
+    <div id="demo-template" class="demo-content" style="display:none;" data-page-node-id="uCELlDe3OLDBZtNUwHWBfk">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="YXwMx4E7mCPLAb4MWuDCAH">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="pB79Btew23k6irsjXVfHN1">
+        <div data-page-node-id="EFwJC3B2m8hTRAVsrSAXYP">
+          <div class="demo-title" data-page-node-id="wvwetu8giUqoL63ab1dVZQ">模板批量填充</div>
+          <div class="demo-subtitle" data-page-node-id="zjB5CDQ62GD3Js9JvhzwGl">选择模板 → 导入数据 → 批量生成文档</div>
+        </div>
+      </div>
+
+      <div class="steps" id="tplSteps" data-page-node-id="f7DELx6KuNmN5Ijup4nY4e">
+        <div class="step active" data-step="1" data-page-node-id="UUdjWM6O6L8cs1Bfboty3D">① 选择模板</div>
+        <div class="step" data-step="2" data-page-node-id="ddSVurTZFrI8Gao3FLE8gp">② 确认数据</div>
+        <div class="step" data-step="3" data-page-node-id="preOY3jvfrD3hmtFLzL3U5">③ 批量生成</div>
+      </div>
+
+      <!-- 步骤1：选模板 -->
+      <div id="tplStep1" data-page-node-id="fAdhFxUCrgdKHo6vXI7Zoj">
+        <div class="status-tip" data-page-node-id="I4X0MsgXsXgqv6rosnkzPZ"><span class="status-dot" data-page-node-id="vq1cCPgxpfcB0mzT3tkhrG"></span><span data-page-node-id="q4Wy3i6sGE077xgwCeR03C">选择一个业务文档模板</span></div>
+        <div class="scene-grid" style="grid-template-columns: repeat(3, 1fr);" data-page-node-id="f7t2XfUxBN2i1rko9QP0b3">
+          <div class="scene-card" onclick="pickTemplate('notice')" id="tpl-notice" data-page-node-id="b3x2Qeb6fKisDQO0AZDciT">
+            <div class="scene-icon" data-page-node-id="hcUpSqXBJF1yBrodixYp6q">📢</div>
+            <div class="scene-title" data-page-node-id="IHanMEwrggY6cA0JvfdHan">通知公告</div>
+            <div class="scene-desc" data-page-node-id="atm1uGAfh7lLPtBtPPg2kK">含标题、正文、发布范围、日期等字段</div>
+          </div>
+          <div class="scene-card" onclick="pickTemplate('meeting')" id="tpl-meeting" data-page-node-id="En9QvZhxioNzabkuRGxTPx">
+            <div class="scene-icon" data-page-node-id="KEZ8ObkQvMrFLuZtZZMRz0">📅</div>
+            <div class="scene-title" data-page-node-id="qkt7c2GVQD9PGLCf15t0i3">会议纪要</div>
+            <div class="scene-desc" data-page-node-id="D9OH9IF1dRkvAbEWxx0sDA">含参会人、议题、决议、待办等字段</div>
+          </div>
+          <div class="scene-card" onclick="pickTemplate('report')" id="tpl-report" data-page-node-id="gGIyPvUNfL58HDiD37HfNK">
+            <div class="scene-icon" data-page-node-id="t4OfhUWrr0YQGCCzJ6iWa5">📊</div>
+            <div class="scene-title" data-page-node-id="dXsh2uoNHflqjdAsWhhAVh">工作汇报</div>
+            <div class="scene-desc" data-page-node-id="BQd3hxEOQydCFUHg8JJGwF">含周期、进展、数据、计划等字段</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步骤2：确认数据 -->
+      <div id="tplStep2" style="display:none;" data-page-node-id="0LlpmTE1OZjv8zfebtLDQd">
+        <div class="status-tip" data-page-node-id="htdlMG2snzphApm7ZF8T6o"><span class="status-dot" data-page-node-id="JORjTGFRR9RI89n2aILP5Q"></span><span data-page-node-id="8KOVs5tsZF58Ze1XTnCmjp">确认待填充的数据（示例数据已预填）</span></div>
+        <div id="tplDataTableWrap" style="overflow-x:auto;" data-page-node-id="uUQE8hmAfr6tbfQk5uWFZx"></div>
+        <div class="btn-group" style="margin-top:14px;" data-page-node-id="rZZVeZu5bIlC5H534v0PVS">
+          <button class="btn btn-primary" onclick="runTplGenerate()" data-page-node-id="vrofXeOprk8id9tqqmPpmd">⚡ 批量生成</button>
+          <button class="btn btn-secondary" onclick="tplPrevStep()" data-page-node-id="jd6UsDDTEVHVgtUHilWgYu">上一步</button>
+        </div>
+      </div>
+
+      <!-- 步骤3：结果 -->
+      <div id="tplStep3" style="display:none;" data-page-node-id="81pTOrQhR65mGoduxrWwlv">
+        <div class="result-panel" id="tplResultPanel" data-page-node-id="rCkET5Gyo0TGeP6j9j9ejL"></div>
+        <div class="btn-group" style="margin-top:14px;" data-page-node-id="FK11yhqh5B8b6sdOeGWaax">
+          <button class="btn btn-secondary" onclick="resetTpl()" data-page-node-id="FmLXCDN6cdx8a21WdEXWY1">重新开始</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 场景5：文档审阅校对 ========== -->
+    <div id="demo-review" class="demo-content" style="display:none;" data-page-node-id="Is7tdGtVB5Qe9iMetajspp">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="9qdLjpyDJjcMbHXsTAFiyQ">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="AW5Mkw9W8jvfyFMDaXOqFR">
+        <div data-page-node-id="WE7TLrK1B3ZmmEP2szzbo5">
+          <div class="demo-title" data-page-node-id="hpP1I0n1EERtjvWBsqQar7">文档审阅校对</div>
+          <div class="demo-subtitle" data-page-node-id="Q1nEIS2Up0arsMNdACfqWz">上传文档 → AI 检查 → 输出校对报告</div>
+        </div>
+      </div>
+
+      <div class="status-tip" data-page-node-id="LBn4uD9f9gYAOGErLftVez"><span class="status-dot" data-page-node-id="d2LZFHmPwwU7ZbZAOckA7e"></span><span data-page-node-id="thADbADKkOiHurhLKCGsN9">模拟对一份文档进行智能审阅，自动检测错别字、语法、格式等问题</span></div>
+
+      <div class="info-card" style="margin-bottom:18px;" data-page-node-id="HL1XpAVwPgHc8ZSzM37FhH">
+        <div class="info-card-title" data-page-node-id="giDv3rLPW5KiicGJuRPtte">📄 待审阅文档</div>
+        <div class="info-card-content" data-page-node-id="wpa64C8GVXmiwcQkI1GXRX">
+          《Q3 产品规划方案》
+          <span class="tag tag-blue" style="margin-left:8px;" data-page-node-id="QhXsVbTbd8hZ3A8kXmNmA9">Word · 12 页</span>
+          <span class="tag tag-yellow" style="margin-left:4px;" data-page-node-id="NEp2koqUi39ygc2tE6BQo9">约 3500 字</span>
+        </div>
+      </div>
+
+      <div class="btn-group" data-page-node-id="jUwDii3p4qvlMw5qKf3D2z">
+        <button class="btn btn-primary" onclick="runReview()" data-page-node-id="W3jGBp3SFxZRlCHCVVBIVD">✅ 开始审阅</button>
+      </div>
+
+      <div id="reviewResult" style="display:none;margin-top:18px;" data-page-node-id="6r0zaPCLo602FChse19aix">
+        <div class="result-panel" data-page-node-id="yQdDIzNw3fwF1Pt9rqfT05">
+          <h3 style="margin-bottom:14px;font-size:15px;" data-page-node-id="zjtg0jenrhYxZeXR1DqdAv">📋 校对报告</h3>
+          <div id="reviewItems" data-page-node-id="UgV1pNUasQWBK1WXwyFxfX"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 场景6：版本对比分析 ========== -->
+    <div id="demo-compare" class="demo-content" style="display:none;" data-page-node-id="R7PaYFY8q3fh85mpkamVmy">
+      <button class="back-btn" onclick="goBack()" data-page-node-id="it51NAf1aYq5GXAAZR1hZc">← 返回场景选择</button>
+      
+      <div class="demo-header" data-page-node-id="wBkYBFOkqvh8pMewqVudCT">
+        <div data-page-node-id="imo1SMIwF12Q2zquGrfO9n">
+          <div class="demo-title" data-page-node-id="qOrgBKvSmX6Kmr0LLJFdRC">版本对比分析</div>
+          <div class="demo-subtitle" data-page-node-id="6bBDChHg8JoG1gDm3WBD9B">上传两个版本 → 差异比对 → 变更摘要</div>
+        </div>
+      </div>
+
+      <div class="status-tip" data-page-node-id="KRC05XHBm1kEW0H88uNWAE"><span class="status-dot" data-page-node-id="d5LQjIQoRtMXUoFKzbdBC5"></span><span data-page-node-id="54l0JXMJqF2roLoNWuWbBh">对比《项目方案》v1 和 v2 的差异，自动标注所有变更内容</span></div>
+
+      <div class="two-col" style="margin-bottom:18px;" data-page-node-id="kxNsd7XKwKt40fI9tsbbiZ">
+        <div data-page-node-id="yTrIDz5kTZYyhEzEjNuB1L">
+          <label style="font-size:13px;color:#64748b;display:block;margin-bottom:7px;" data-page-node-id="Ef1IPZtQtgJMjApuQCI960">v1（旧版本）：</label>
+          <div class="result-panel" style="min-height:150px;font-size:12.5px;line-height:1.9;" data-page-node-id="eXt6PsrSrTnfRgX28Je6dY">
+            <strong data-page-node-id="kXwqMgE3RRpLerYhm97rx1">三、项目周期</strong><br data-page-node-id="JV86SR52CPaKnP6AkqejQC">
+            项目总工期为<strong data-page-node-id="o89B8zibqFSOD45GqDqxTc">3个月</strong>，分三个阶段：<br data-page-node-id="8AgZGy1RfCmAfoeQm85sVO">
+            第一阶段：需求调研（2周）<br data-page-node-id="zFSP8Zh68OflvSZz2LxvFv">
+            第二阶段：开发实现（6周）<br data-page-node-id="Oeh8rQom6QspGzpoVJw9g5">
+            第三阶段：测试上线（4周）
+          </div>
+        </div>
+        <div data-page-node-id="HSCbx6Qq7EnkHms73ZI1pu">
+          <label style="font-size:13px;color:#64748b;display:block;margin-bottom:7px;" data-page-node-id="U00DONQBUAfTKHsAxUvSF3">v2（新版本）：</label>
+          <div class="result-panel" style="min-height:150px;font-size:12.5px;line-height:1.9;" data-page-node-id="xEHDzluR44y4JRLD5rVJyb">
+            <strong data-page-node-id="VvksqKUVTHPIV3dfdV8li0">三、项目周期</strong><br data-page-node-id="1bftLgqpp6vu7Fh75epYj6">
+            项目总工期为<strong data-page-node-id="a9NIkjm7ElpF4ZHb9bkYYf">4个月</strong>，分四个阶段：<br data-page-node-id="lWcd7noFmnF5zlrPCs6mOC">
+            第一阶段：需求调研（<del style="color:#ef4444;" data-page-node-id="kZqLO0E3k835ASIH4KmiO0">2周</del> <ins style="color:#16a34a;text-decoration:none;font-weight:600;" data-page-node-id="bZ81ZZHkGWg7xaiCpXP8Xi">3周</ins>）<br data-page-node-id="HOdB1CpHh4GjumPl2E4rOC">
+            第二阶段：开发实现（<del style="color:#ef4444;" data-page-node-id="k7h8KzuUnTRrHaMhgTG5fR">6周</del> <ins style="color:#16a34a;text-decoration:none;font-weight:600;" data-page-node-id="ViQqOUzKK546Mp5JyhJaUp">8周</ins>）<br data-page-node-id="RfvLRTR7dLi6EAIg8AP7Z8">
+            第三阶段：测试上线（4周）<br data-page-node-id="SlN6to4IsZsxtzTwYHaKCR">
+            <br data-page-node-id="5IClP0vG5xJxsMoJcX4ga7">
+            <strong style="color:#3b82f6;" data-page-node-id="gNAFX344T0Ovd7Sb5MDsBP">[新增]</strong> 第四阶段：试运行优化（2周）
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group" data-page-node-id="g5VpHBECZdT3gF5AuMfgrt">
+        <button class="btn btn-primary" onclick="runCompare()" data-page-node-id="3kmzxt6NGOyGapFvp9OgPy">⚖️ 生成差异报告</button>
+      </div>
+
+      <div id="compareResult" style="display:none;margin-top:18px;" data-page-node-id="QVu35KVbc9lZfzOf1Npvtm">
+        <div class="result-panel" id="compareReport" data-page-node-id="k4h29BmVOmmD32rwzkorgA"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 底部能力说明 -->
+  <div style="background:#fff;border-radius:12px;padding:22px;margin-top:28px;box-shadow:0 2px 8px rgba(0,0,0,0.05);" data-page-node-id="Xs65krLGu3IgcqXJwD0R8C">
+    <h3 style="font-size:15px;color:#1e293b;margin-bottom:12px;" data-page-node-id="bcgkHZOaeY9abQufmvrbBD">🧰 WorkBuddy 文档处理核心能力</h3>
+    <div class="capability-tags" data-page-node-id="Cr7v0HSIGrFUF5LeDuXB3w">
+      <span class="cap-tag highlight" data-page-node-id="4T2FeE2Ap6tgEYpx8dDjZH">AI 文档生成</span>
+      <span class="cap-tag highlight" data-page-node-id="HGbZmZqE6z3Xv7OHdp16Fs">多格式解析</span>
+      <span class="cap-tag highlight" data-page-node-id="kmHhVx3j4yAUcNXOuOaMxJ">智能摘要</span>
+      <span class="cap-tag highlight" data-page-node-id="oT7ILZS8GwW167NKsIgAU5">OCR 识别</span>
+      <span class="cap-tag highlight" data-page-node-id="995AUdShFXxtVw2fXGuABg">表格提取</span>
+      <span class="cap-tag highlight" data-page-node-id="qFfjWv9uR8C59QfkLO8ZPd">模板引擎</span>
+      <span class="cap-tag highlight" data-page-node-id="bENDqxxiSoOdLnpXIJ6O1M">智能校对</span>
+      <span class="cap-tag highlight" data-page-node-id="WzqWYsaWVyvebBMvMkShAf">版本管理</span>
+      <span class="cap-tag" data-page-node-id="WKJ9DlsmWOV3tHqJFOrpEF">批量处理</span>
+      <span class="cap-tag" data-page-node-id="Uu5SnQIZDlTQpLPxCpouAJ">全文检索</span>
+      <span class="cap-tag" data-page-node-id="cdTPOag4GcLFaQYgJYnAc4">权限控制</span>
+      <span class="cap-tag" data-page-node-id="6yyTTljp8KNkiUufjhqg1K">审计日志</span>
+    </div>
+  </div>
+
+  <div class="footer-note" data-page-node-id="o3W0q0hmYGEd5E9Bj3GWiD">WorkBuddy 文档处理 Demo · 让 AI 成为你的办公文档助手</div>
+
+</div>
+
+<script>
+// ===== 全局状态 =====
+var currentScene = null;
+var selectedTpl = null;
+
+// 模板数据
+var tplData = {
+  notice: {
+    name: '通知公告',
+    headers: ['标题', '发布对象', '核心内容', '截止日期'],
+    rows: [
+      ['中秋节放假安排通知', '全体员工', '9月15日-17日放假调休，共3天', '—'],
+      ['系统升级维护通知', '各部门', '9月12日22:00-次日6:00停机维护', '—'],
+      ['办公区域调整通知', '研发中心', 'A座5层调整为开放办公区', '9月10日前搬迁']
+    ]
+  },
+  meeting: {
+    name: '会议纪要',
+    headers: ['会议主题', '参会人员', '决议事项', '待办负责人'],
+    rows: [
+      ['Q3 产品评审会', '产品+研发+设计', '通过3个需求优先级调整', '张三'],
+      ['技术方案讨论会', '后端+架构师', '确定微服务拆分方案', '李四'],
+      ['周例会', '全员', '同步各线进度，识别阻塞项', '王五']
+    ]
+  },
+  report: {
+    name: '工作汇报',
+    headers: ['汇报人', '本周进展', '下周计划', '风险/需协调'],
+    rows: [
+      ['张三', '完成商品模块联调，修复15个bug', '启动UAT测试', '支付接口延期'],
+      ['李四', '数据看板新增5个图表', '完成用户操作手册', '需PM确认3个需求'],
+      ['王五', '完成竞品分析报告', '组织用户访谈', '无']
+    ]
+  }
+};
+
+// ===== 场景切换 =====
+function selectScene(scene) {
+  currentScene = scene;
+  var cards = document.querySelectorAll('#sceneGrid .scene-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('active');
+    if (cards[i].getAttribute('data-scene') === scene) cards[i].classList.add('active');
+  }
+  document.getElementById('demoArea').classList.add('show');
+  var contents = document.querySelectorAll('.demo-content');
+  for (var j = 0; j < contents.length; j++) contents[j].style.display = 'none';
+  var target = document.getElementById('demo-' + scene);
+  if (target) target.style.display = 'block';
+  document.getElementById('sceneGrid').style.display = 'none';
+}
+
+function goBack() {
+  currentScene = null;
+  document.getElementById('demoArea').classList.remove('show');
+  document.getElementById('sceneGrid').style.display = 'grid';
+  var cards = document.querySelectorAll('#sceneGrid .scene-card');
+  for (var k = 0; k < cards.length; k++) cards[k].classList.remove('active');
+}
+
+// ===== 场景1：文档生成 =====
+function runDocCreate() {
+  var progress = document.getElementById('createProgress');
+  var resultDiv = document.getElementById('createResult');
+  var preview = document.getElementById('docPreview');
+
+  resultDiv.style.display = 'block';
+  preview.innerHTML = '<div class="typing-cursor" style="text-align:center;color:#94a3b8;padding:36px;">正在分析需求并生成文档...</div>';
+
+  progress.style.width = '15%';
+  setTimeout(function() { progress.style.width = '45%'; }, 350);
+  setTimeout(function() { progress.style.width = '75%'; }, 700);
+  setTimeout(function() {
+    progress.style.width = '100%';
+    preview.innerHTML = buildDocHTML();
+  }, 1100);
+}
+
+function buildDocHTML() {
+  return '<div class="scan-line"></div>' +
+    '<h2>会议总结</h2>' +
+    '<table style="margin:0 auto 18px auto;width:85%;">' +
+    '<tr><td style="border:none;padding:4px 8px;"><strong>会议主题：</strong></td><td style="border:none;padding:4px 8px;">Q3 产品规划评审会</td>' +
+    '<td style="border:none;padding:4px 8px;"><strong>会议时间：</strong></td><td style="border:none;padding:4px 8px;">2026年9月1日 14:00-16:00</td></tr>' +
+    '<tr><td style="border:none;padding:4px 8px;"><strong>会议地点：</strong></td><td style="border:none;padding:4px 8px;">3楼大会议室 A</td>' +
+    '<td style="border:none;padding:4px 8px;"><strong>记录人：</strong></td><td style="border:none;padding:4px 8px;">张三</td></tr>' +
+    '<tr><td style="border:none;padding:4px 8px;"><strong>参会人员：</strong></td><td colspan="3" style="border:none;padding:4px 8px;">产品中心、研发中心、设计团队（共 12 人）</td></tr>' +
+    '</table>' +
+
+    '<h3>一、会议议题与决议</h3>' +
+    '<table>' +
+      '<tr><th style="width:35%;">议题</th><th style="width:40%;">决议内容</th><th>负责人</th></tr>' +
+      '<tr><td>二期模块优先级排序</td><td>确定 P0：商品管理 → P1：订单履约 → P2：数据分析</td><td>产品组</td></tr>' +
+      '<tr><td>数据看板方案评审</td><td>方案通过，下周启动开发，先做销售趋势和库存预警</td><td>李四</td></tr>' +
+      '<tr><td>移动端适配排期</td><td>资源有限，推迟到 Q4，优先保障 Web 端体验</td><td>王五</td></tr>' +
+    '</table>' +
+
+    '<h3>二、待办事项</h3>' +
+    '<table>' +
+      '<tr><th style="width:6%;">序号</th><th style="width:38%;">待办事项</th><th style="width:15%;">负责人</th><th style="width:18%;">截止时间</th><th>状态</th></tr>' +
+      '<tr><td>1</td><td>输出二期详细开发排期（含里程碑）</td><td>张三</td><td>9月5日</td><td><span class="tag tag-yellow">进行中</span></td></tr>' +
+      '<tr><td>2</td><td>确认数据看板技术实现方案</td><td>李四</td><td>9月4日</td><td><span class="tag tag-blue">待开始</span></td></tr>' +
+      '<tr><td>3</td><td>整理移动端需求池，输出 Q4 规划草案</td><td>王五</td><td>9月10日</td><td><span class="tag tag-blue">待开始</span></td></tr>' +
+      '<tr><td>4</td><td>发送会议纪要至全体参会人</td><td>张三</td><td>9月2日</td><td><span class="tag tag-green">已完成</span></td></tr>' +
+    '</table>' +
+
+    '<h3>三、下次会议安排</h3>' +
+    '<p style="text-indent:0;">时间：<strong>9月8日（周二）14:00</strong>&nbsp;&nbsp;|&nbsp;&nbsp;议题：二期技术方案过审 &nbsp;&nbsp;|&nbsp;&nbsp;地点：3楼大会议室 A</p>';
+}
+
+function clearCreateResult() {
+  document.getElementById('createResult').style.display = 'none';
+  document.getElementById('createProgress').style.width = '0';
+}
+
+// ===== 场景2：内容智能提取 =====
+function runExtract() {
+  var container = document.getElementById('extractResult');
+  container.innerHTML = '';
+
+  var items = [
+    { label: '文档类型', value: '请示公文' },
+    { label: '发文部门', value: '产品中心' },
+    { label: '发文日期', value: '2026 年 8 月 28 日' },
+    { label: '事由', value: '申请启动智慧零售平台二期建设项目' },
+    { label: '建设目标', value: '完成商品管理、订单履约、数据分析三大模块，效率提升 30%' },
+    { label: '项目预算', value: '180 万元（开发 120 万 + 基础设施 40 万 + 其他 20 万）' },
+    { label: '建设周期', value: '6 个月' },
+    { label: '人力资源需求', value: '后端 4 人 + 前端 3 人 + 测试 2 人 + 产品经理 1 人（共 10 人）' },
+    { label: '关键词', value: '#智慧零售 #SaaS #平台建设 #二期 #预算申请' },
+    { label: 'AI 摘要', value: '产品中心申请启动智慧零售 SaaS 平台二期建设，预算 180 万，周期 6 个月，需 10 人团队支持。', tag: 'tag-blue', tagText: '自动生成' }
+  ];
+
+  (function showItem(idx) {
+    if (idx >= items.length) return;
+    var div = document.createElement('div');
+    div.className = 'result-item';
+    var html = '<div class="result-label">' + items[idx].label + '</div>';
+    html += '<div class="result-value">' + items[idx].value;
+    if (items[idx].tag) html += ' <span class="tag ' + items[idx].tag + '" style="margin-left:6px;">' + items[idx].tagText + '</span>';
+    html += '</div>';
+    div.innerHTML = html;
+    container.appendChild(div);
+    setTimeout(function() { div.classList.add('show'); showItem(idx + 1); }, 120);
+  })(0);
+}
+
+function clearExtractResult() {
+  document.getElementById('extractResult').innerHTML = '';
+}
+
+// ===== 场景3：格式转换 =====
+function runConvert() {
+  var rd = document.getElementById('convertResult');
+  rd.style.display = 'none';
+  setTimeout(function() {
+    rd.style.display = 'block';
+    rd.style.animation = 'fadeIn 0.4s ease';
+  }, 800);
+}
+
+// ===== 场景4：模板批量填充 =====
+function pickTemplate(tpl) {
+  selectedTpl = tpl;
+  var cards = document.querySelectorAll('#tplStep1 .scene-card');
+  for (var i = 0; i < cards.length; i++) cards[i].classList.remove('active');
+  document.getElementById('tpl-' + tpl).classList.add('active');
+
+  setTimeout(function() {
+    document.getElementById('tplStep1').style.display = 'none';
+    document.getElementById('tplStep2').style.display = 'block';
+    updateTplStep(2);
+    renderTplTable(tpl);
+  }, 250);
+}
+
+function updateTplStep(s) {
+  var steps = document.querySelectorAll('#tplSteps .step');
+  for (var i = 0; i < steps.length; i++) {
+    var sv = parseInt(steps[i].getAttribute('data-step'));
+    steps[i].classList.remove('active','done');
+    if (sv < s) steps[i].classList.add('done');
+    else if (sv === s) steps[i].classList.add('active');
+  }
+}
+
+function renderTplTable(tpl) {
+  var d = tplData[tpl];
+  var wrap = document.getElementById('tplDataTableWrap');
+  var h = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+  h += '<thead><tr style="background:#f8fafc;">';
+  for (var i = 0; i < d.headers.length; i++) h += '<th style="border:1px solid #e2e8f0;padding:8px 10px;text-align:left;">' + d.headers[i] + '</th>';
+  h += '</tr></thead><tbody>';
+  for (var j = 0; j < d.rows.length; j++) {
+    h += '<tr>';
+    for (var k = 0; k < d.rows[j].length; k++) h += '<td style="border:1px solid #e2e8f0;padding:7px 10px;">' + d.rows[j][k] + '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+}
+
+function tplPrevStep() {
+  document.getElementById('tplStep2').style.display = 'none';
+  document.getElementById('tplStep1').style.display = 'block';
+  updateTplStep(1);
+}
+
+function runTplGenerate() {
+  document.getElementById('tplStep2').style.display = 'none';
+  document.getElementById('tplStep3').style.display = 'block';
+  updateTplStep(3);
+
+  var d = tplData[selectedTpl];
+  var panel = document.getElementById('tplResultPanel');
+  var h = '<h3 style="margin-bottom:14px;font-size:15px;">✅ 批量生成完成</h3>';
+  h += '<p style="font-size:13px;color:#64748b;margin-bottom:14px;">模板：<strong>' + d.name + '</strong>，共生成 <strong style="color:#3b82f6;">' + d.rows.length + '</strong> 份文档</p>';
+
+  for (var m = 0; m < d.rows.length; m++) {
+    h += '<div class="result-item show" style="margin-bottom:6px;">';
+    h += '<div class="result-value">📄 ' + d.name + '_' + (m+1) + '.docx <span style="float:right;color:#16a34a;font-size:12px;">已生成 ✓</span></div>';
+    h += '</div>';
+  }
+  h += '<div style="margin-top:14px;text-align:center;">';
+  h += '<button class="btn btn-secondary" onclick="alert(\'实际使用时将触发打包下载\')">📥 打包下载全部</button>';
+  h += '</div>';
+  panel.innerHTML = h;
+}
+
+function resetTpl() {
+  selectedTpl = null;
+  document.getElementById('tplStep3').style.display = 'none';
+  document.getElementById('tplStep1').style.display = 'block';
+  updateTplStep(1);
+  var cards = document.querySelectorAll('#tplStep1 .scene-card');
+  for (var n = 0; n < cards.length; n++) cards[n].classList.remove('active');
+}
+
+// ===== 场景5：文档审阅校对 =====
+function runReview() {
+  var rd = document.getElementById('reviewResult');
+  var cont = document.getElementById('reviewItems');
+  rd.style.display = 'block';
+  cont.innerHTML = '';
+
+  var issues = [
+    { level: 'high', title: '发现 2 处错别字', desc: '第 3 页第 2 段："帐号"应改为"账号"；第 7 页表格："截止日期"建议改为"届满日期"以避免歧义。', tag: '❌ 错别字' },
+    { level: 'medium', title: '标点符号不规范', desc: '全文存在 5 处中英文混用标点（如中文语境下使用了半角逗号），建议统一替换为全角标点。', tag: '⚠️ 格式问题' },
+    { level: 'medium', title: '编号层级不统一', desc: '第 5 章使用"一、二、三"而第 6 章使用"1.1 / 1.2"，建议全文统一编号风格。', tag: '⚠️ 格式问题' },
+    { level: 'low', title: '建议补充图表说明', desc: '第 8 页的"用户增长趋势图"缺少图注和数据来源说明，建议补充以增强可读性。', tag: '💡 优化建议' },
+    { level: 'info', title: '整体评价', desc: '文档结构清晰、逻辑完整。共发现 <strong style="color:#dc2626;">2</strong> 处必须修改、<strong style="color:#d97706;">3</strong> 处建议优化。整体质量评分：<strong style="color:#3b82f6;font-size:16px;">86 / 100</strong>', tag: '📊 总结' }
+  ];
+
+  var lc = { high: '#dc2626', medium: '#d97706', low: '#2563eb', info: '#4b5563' };
+  var lb = { high: '#fef2f2', medium: '#fffbeb', low: '#eff6ff', info: '#f9fafb' };
+
+  (function showItem(idx) {
+    if (idx >= issues.length) return;
+    var it = issues[idx];
+    var div = document.createElement('div');
+    div.className = 'result-item';
+    div.style.borderLeftColor = lc[it.level];
+    div.style.background = lb[it.level];
+    div.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;flex-wrap:wrap;gap:4px;">' +
+        '<span style="font-weight:600;font-size:13.5px;">' + it.title + '</span>' +
+        '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:' + lc[it.level] + ';color:#fff;">' + it.tag + '</span>' +
+      '</div>' +
+      '<div style="font-size:12.5px;color:#475569;">' + it.desc + '</div>';
+    cont.appendChild(div);
+    setTimeout(function() { div.classList.add('show'); showItem(idx + 1); }, 200);
+  })(0);
+}
+
+// ===== 场景6：版本对比 =====
+function runCompare() {
+  var rd = document.getElementById('compareResult');
+  var rp = document.getElementById('compareReport');
+  rd.style.display = 'block';
+
+  rp.innerHTML =
+    '<h3 style="margin-bottom:14px;font-size:15px;">📊 版本差异报告</h3>' +
+
+    '<div style="background:#fef2f2;border-left:3px solid #ef4444;padding:12px 15px;border-radius:6px;margin-bottom:10px;">' +
+      '<div style="font-weight:600;font-size:13.5px;color:#dc2626;margin-bottom:4px;">❌ 数值变更（需关注）</div>' +
+      '<ul style="padding-left:1.5em;margin:0;font-size:12.5px;color:#475569;line-height:1.8;">' +
+        '<li>项目总工期从 <strong>3 个月</strong> → <strong>4 个月</strong>（+33%）</li>' +
+        '<li>需求调研：2 周 → 3 周</li>' +
+        '<li>开发实现：6 周 → 8 周</li>' +
+      '</ul>' +
+    '</div>' +
+
+    '<div style="background:#eff6ff;border-left:3px solid #3b82f6;padding:12px 15px;border-radius:6px;margin-bottom:10px;">' +
+      '<div style="font-weight:600;font-size:13.5px;color:#2563eb;margin-bottom:4px;">➕ 新增内容</div>' +
+      '<ul style="padding-left:1.5em;margin:0;font-size:12.5px;color:#475569;line-height:1.8;">' +
+        '<li>新增「第四阶段：试运行优化（2周）」</li>' +
+        '<li>阶段数量从 3 个变为 4 个</li>' +
+      '</ul>' +
+    '</div>' +
+
+    '<div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:12px 15px;border-radius:6px;">' +
+      '<div style="font-weight:600;font-size:13.5px;color:#16a34a;margin-bottom:4px;">📈 统计摘要</div>' +
+      '<div style="font-size:12.5px;color:#475569;">' +
+        '变更行数：<strong style="color:#3b82f6;">4 处</strong>&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '新增段落：<strong style="color:#16a34a;">1 处</strong>&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '数值修改：<strong style="color:#d97706;">3 处</strong>&nbsp;&nbsp;|&nbsp;&nbsp;' +
+        '删除内容：<strong style="color:#94a3b8;">0 处</strong>' +
+      '</div>' +
+    '</div>';
+}
+</script>
+
+</body>
+</html>

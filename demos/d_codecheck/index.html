@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码审查 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1d1d1f; line-height: 1.6; }
+  .container { max-width: 960px; margin: 40px auto; padding: 0 24px; }
+
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #1d1d1f; }
+  .subtitle { font-size: 14px; color: #86868b; margin-bottom: 32px; }
+
+  .code-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5ea;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5ea;
+    font-size: 13px;
+    color: #86868b;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  pre {
+    margin: 0;
+    padding: 20px;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13.5px;
+    line-height: 1.75;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+  .kw { color: #c62828; font-weight: 600; }
+  .fn { color: #1565c0; }
+  .str { color: #2e7d32; }
+  .num { color: #e65100; }
+  .cm { color: #90a4ae; font-style: italic; }
+  .hl-sql { background: rgba(220,53,69,0.10); display: inline-block; width: calc(100% + 40px); margin-left: -20px; padding-left: 20px; }
+  .hl-warn { background: rgba(255,193,7,0.12); display: inline-block; width: calc(100% + 40px); margin-left: -20px; padding-left: 20px; }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-top: 1px solid #e5e5ea;
+    background: #fafafa;
+  }
+  .status-text { font-size: 13px; color: #86868b; }
+  .status-text.active { color: #007aff; }
+  .status-text.done { color: #34c759; }
+  .btn-review {
+    padding: 8px 22px;
+    border-radius: 8px;
+    border: none;
+    background: #007aff;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-review:hover { background: #0062cc; }
+  .btn-review:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 结果区域 */
+  #results { display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .summary-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px 16px;
+    text-align: center;
+    border: 1px solid #e5e5ea;
+  }
+  .summary-card .num { font-size: 32px; font-weight: 700; line-height: 1.2; }
+  .summary-card .label { font-size: 12px; color: #86868b; margin-top: 4px; }
+  .card-danger .num { color: #dc3545; } .card-danger { background: #fff5f5; border-color: #ffcdd2; }
+  .card-warn .num   { color: #e6a23c; } .card-warn   { background: #fdf6ec; border-color: #faecd8; }
+  .card-info .num   { color: #409eff; } .card-info   { background: #ecf5ff; border-color: #d9ecff; }
+  .card-ok .num     { color: #67c23a; } .card-ok     { background: #f0f9eb; border-color: #e1f3d8; }
+
+  .result-section {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e5ea;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .result-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e5e5ea;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-body { padding: 20px; }
+
+  /* 文字审查结果 */
+  .issue-block {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .issue-block:last-child { border-bottom: none; }
+  .issue-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .issue-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .tag-critical { background: #dc3545; color: #fff; }
+  .tag-high    { background: #e6a23c; color: #fff; }
+  .tag-medium  { background: #409eff; color: #fff; }
+  .tag-low     { background: #909399; color: #fff; }
+  .issue-name { font-size: 15px; font-weight: 600; }
+  .issue-meta { font-size: 12px; color: #999; }
+  .issue-desc { font-size: 14px; color: #555; margin-bottom: 10px; padding-left: 4px; }
+  .fix-box {
+    background: #f8f9fa;
+    border-left: 3px solid #67c23a;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    margin-top: 10px;
+  }
+  .fix-label { font-size: 12px; color: #67c23a; font-weight: 600; margin-bottom: 8px; }
+  .fix-code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .conclusion-box {
+    background: linear-gradient(135deg, #f0f9eb 0%, #ecf5ff 100%);
+    border-radius: 10px;
+    padding: 20px 24px;
+    border: 1px solid #d9ecff;
+  }
+  .conclusion-box h3 { font-size: 15px; margin-bottom: 10px; color: #303133; }
+  .conclusion-box p { font-size: 14px; color: #606266; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>代码审查</h1>
+<p class="subtitle">智能检查代码质量、潜在问题和安全风险</p>
+
+<!-- 代码展示 -->
+<div class="code-card">
+  <div class="code-header">
+    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    <span>user-service.js</span>
+  </div>
+  <pre id="code-area"><code><span class="kw">const</span> express = <span class="kw">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> app = express();
+<span class="kw">const</span> db = <span class="kw">require</span>(<span class="str">'./db'</span>);
+
+app.<span class="fn">get</span>(<span class="str">'/api/users/:id'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> id = req.params.id;
+<span class="hl-sql">  <span class="kw">const</span> query = <span class="str">"SELECT * FROM users WHERE id = "</span> + id;</span>
+  <span class="kw">const</span> result = <span class="kw">await</span> db.<span class="fn">query</span>(query);
+  res.<span class="fn">json</span>(result[<span class="num">0</span>]);
+});
+
+app.<span class="fn">listen</span>(<span class="hl-warn"><span class="num">3000</span></span>);</code></pre>
+  <div class="action-bar">
+    <span class="status-text" id="status">就绪，等待审查</span>
+    <button class="btn-review" id="btnRun" onclick="runReview()">开始审查</button>
+  </div>
+</div>
+
+<!-- 审查结果 -->
+<div id="results">
+  <!-- 汇总卡片 -->
+  <div class="summary-cards">
+    <div class="summary-card card-danger"><div class="num" id="n-danger">2</div><div class="label">安全漏洞</div></div>
+    <div class="summary-card card-warn"><div class="num" id="n-warn">3</div><div class="label">质量问题</div></div>
+    <div class="summary-card card-info"><div class="num" id="n-info">1</div><div class="label">性能隐患</div></div>
+    <div class="summary-card card-ok"><div class="num" id="n-score">92</div><div class="label">健康评分</div></div>
+  </div>
+
+  <!-- 问题详情（文字版） -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      发现的问题
+    </div>
+    <div class="result-body" id="issues-text"></div>
+  </div>
+
+  <!-- 结论与建议 -->
+  <div class="result-section">
+    <div class="result-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#67c23a" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      审查结论
+    </div>
+    <div class="result-body">
+      <div class="conclusion-box">
+        <h3>总体评价</h3>
+        <p id="conclusion-text"></p>
+        <h3 style="margin-top: 16px;">修复优先级建议</h3>
+        <p id="priority-text"></p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#results -->
+
+</div><!-- /.container -->
+
+<script>var issuesData=[{severity:'critical',tag:'严重',tagClass:'tag-critical',name:'SQL 注入漏洞',meta:'第 9 行 · 安全',desc:'使用字符串拼接方式构建 SQL 查询语句，攻击者可通过构造恶意参数注入任意 SQL 命令，可能导致数据泄露、篡改或删除。这是 OWASP Top 10 中排名前列的高危漏洞。',fix:"const query = \"SELECT id, name, email FROM users WHERE id = ?\";\nconst result = await db.query(query, [parseInt(id, 10)]);\n\n// \u8BF4\u660E\uFF1A\u4F7F\u7528\u53C2\u6570\u5316\u67E5\u8BE2\uFF08\u5360\u4F4D\u7B26\uFF09\u66FF\u4EE3\u5B57\u7B26\u4E32\u62FC\u63A5\uFF0C\n// \u6570\u636E\u5E93\u9A71\u52A8\u4F1A\u81EA\u52A8\u5BF9\u53C2\u6570\u8FDB\u884C\u8F6C\u4E49\uFF0C\u4ECE\u6839\u672C\u4E0A\u675C\u7EDD SQL \u6CE8\u5165\u3002"},{severity:'critical',tag:'严重',tagClass:'tag-critical',name:'缺少输入校验',meta:'第 8 行 · 安全',desc:'直接使用 URL 路径参数 req.params.id 参与数据库查询，未进行类型验证和范围检查。攻击者可传入非数字字符、负数、超大数值等异常值，导致意外行为或报错信息泄露。',fix:"const rawId = req.params.id;\nconst id = parseInt(rawId, 10);\n\nif (isNaN(id) || id < 1 || id > 2147483647) {\n  return res.status(400).json({\n    error: \"Invalid user ID\",\n    message: \"ID must be a positive integer\"\n  });\n}\n\n// \u8BF4\u660E\uFF1A\u5728\u4E1A\u52A1\u903B\u8F91\u5165\u53E3\u5904\u8FDB\u884C\u767D\u540D\u5355\u6821\u9A8C\uFF0C\n// \u62D2\u7EDD\u6240\u6709\u4E0D\u7B26\u5408\u9884\u671F\u7684\u8F93\u5165\u3002"},{severity:'high',tag:'高',tagClass:'tag-high',name:'缺少错误处理机制',meta:'第 10 行 · 可靠性',desc:'数据库查询操作未包裹在 try/catch 块中。当数据库连接失败、查询超时或返回异常结果时，未捕获的 Promise rejection 将导致进程崩溃（unhandledRejection），服务完全不可用。',fix:"try {\n  const query = \"SELECT id, name, email FROM users WHERE id = ?\";\n  const result = await db.query(query, [id]);\n\n  if (!result || result.length === 0) {\n    return res.status(404).json({ error: \"User not found\" });\n  }\n  res.json(result[0]);\n} catch (err) {\n  console.error(\"[user-service] DB error:\", err.message);\n  res.status(500).json({ error: \"Internal server error\" });\n}"},{severity:'high',tag:'高',tagClass:'tag-high',name:'硬编码端口号',meta:'第 14 行 · 规范',desc:'服务监听端口硬编码为 3000，在不同环境（开发/测试/生产）部署时需要修改源码并重新构建，违反十二因素应用（12-Factor App）的配置管理原则，且容易因端口冲突导致启动失败。',fix:"const PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(`[user-service] Server running on port ${PORT}`);\n});\n\n// \u90E8\u7F72\u65F6\u901A\u8FC7\u73AF\u5883\u53D8\u91CF\u6307\u5B9A\u7AEF\u53E3\uFF1A\n// \u751F\u4EA7\u73AF\u5883: PORT=8080 node user-service.js"},{severity:'medium',tag:'中',tagClass:'tag-medium',name:'SELECT * 返回全部字段',meta:'第 9 行 · 安全 / 性能',desc:'使用 SELECT * 查询会返回用户表的所有字段，包括可能存在的 password_hash、phone、id_card 等敏感信息。同时也会增加不必要的网络传输和内存开销。',fix:"// \u4EC5\u67E5\u8BE2\u4E1A\u52A1\u5FC5\u9700\u7684\u5B57\u6BB5\uFF0C\u907F\u514D\u654F\u611F\u6570\u636E\u6CC4\u9732\nconst query = \"SELECT id, username, avatar_url FROM users WHERE id = ?\";"},{severity:'medium',tag:'中',tagClass:'tag-medium',name:'无数据库操作超时保护',meta:'第 10 行 · 性能 / 可靠性',desc:'数据库查询操作没有设置超时时间。当数据库负载过高、网络抖动或出现慢查询时，请求将无限期挂起，最终耗尽服务器连接池资源，导致雪崩效应。',fix:"const QUERY_TIMEOUT_MS = 5000;\n\nconst result = await Promise.race([\n  db.query(query, [id]),\n  new Promise((_, reject) =>\n    setTimeout(() => reject(new Error('DB query timeout')), QUERY_TIMEOUT_MS)\n  )\n];"}];var running=false;function runReview(){if(running)return;running=true;var btn=document.getElementById('btnRun');var status=document.getElementById('status');var results=document.getElementById('results');btn.disabled=true;results.style.display='none';var phases=['正在解析 AST 语法树...','正在检测安全漏洞...','正在检查编码规范...','正在分析性能瓶颈...','正在生成审查报告...'];var i=0;status.className='status-text active';var timer=setInterval(function(){if(i<phases.length){status.textContent=phases[i];i++;}else{clearInterval(timer);showResults();}},550);}function showResults(){var status=document.getElementById('status');var btn=document.getElementById('btnRun');var results=document.getElementById('results');var container=document.getElementById('issues-text');status.textContent='审查完成 — 发现 '+issuesData.length+' 个问题';status.className='status-text done';btn.disabled=false;btn.textContent='重新审查';running=false;var html='';issuesData.forEach(function(issue){html+="\n    <div class=\"issue-block\">\n      <div class=\"issue-title-row\">\n        <span class=\"issue-tag ".concat(issue.tagClass,"\">").concat(issue.tag,"</span>\n        <span class=\"issue-name\">").concat(issue.name,"</span>\n        <span class=\"issue-meta\">").concat(issue.meta,"</span>\n      </div>\n      <p class=\"issue-desc\">").concat(issue.desc,"</p>\n      <div class=\"fix-box\">\n        <div class=\"fix-label\">\u5EFA\u8BAE\u4FEE\u590D\u65B9\u6848</div>\n        <div class=\"fix-code\">").concat(issue.fix,"</div>\n      </div>\n    </div>");});container.innerHTML=html;document.getElementById('conclusion-text').innerHTML='本次审查共发现 <strong>'+issuesData.length+'</strong> 个问题，其中'+' <strong style="color:#dc3545">2 个严重级别</strong>（SQL 注入 + 缺少输入校验），'+' <strong style="color:#e6a23c">2 个高级别</strong>（无错误处理 + 硬编码端口），'+' <strong style="color:#409eff">2 个中级别</strong>（字段暴露 + 无超时保护）。<br><br>'+'该文件存在可直接利用的安全漏洞，<strong>不建议合入主分支</strong>。优先修复两个严重问题后可提升至可用状态。';document.getElementById('priority-text').innerHTML='<strong>P0 — 立即修复：</strong>SQL 注入漏洞、输入校验缺失<br>'+'<strong>P1 — 本周修复：</strong>错误处理机制、硬编码配置<br>'+'<strong>P2 — 下迭代优化：</strong>字段最小化原则、超时保护策略';results.style.display='block';}</script>
+</body>
+</html>
