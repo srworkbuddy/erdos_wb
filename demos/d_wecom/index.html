@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="goDPjiaQgxQ2OYi5djDUbM">
+<head data-page-node-id="VX4VzE9xuCL7asFIjZDCFi">
+<meta charset="UTF-8" data-page-node-id="N1Xk6BAmcCnIbiVOXCot4s">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="eRtME3DEa9hDhWCENAqqpg">
+<title>WorkBuddy 接入企业微信 · 操作演示</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --blue: #2B5AED;
+    --blue-l: #5B7BF7;
+    --ink: #1F2329;
+    --sub: #646A73;
+    --line: #E5E6EB;
+    --bg: #F5F7FA;
+    --card: #FFFFFF;
+    --green: #00B578;
+    --warn: #FF8800;
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 60px; }
+
+  .header {
+    background: linear-gradient(135deg, #2B5AED 0%, #5B7BF7 45%, #7C6CF7 100%);
+    padding: 56px 20px 48px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 28px;
+  }
+  .header .tag {
+    display: inline-block;
+    background: rgba(255,255,255,.2);
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255,255,255,.28);
+  }
+  .header h1 { font-size: 30px; font-weight: 700; letter-spacing: 1px; }
+  .header .sub { font-size: 15px; color: rgba(255,255,255,.88); margin-top: 8px; font-weight: 300; }
+  .header .badges { margin-top: 18px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .header .badge {
+    background: rgba(255,255,255,.16);
+    padding: 6px 16px; border-radius: 22px; font-size: 13px;
+    border: 1px solid rgba(255,255,255,.22);
+  }
+
+  .overview {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 28px;
+    border: 1px solid var(--line);
+  }
+  .overview h2 { font-size: 18px; margin-bottom: 16px; color: var(--ink); }
+  .steps-flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .flow-step {
+    background: #EEF2FF; color: var(--blue);
+    padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  }
+  .flow-arrow { color: #B8BECC; font-size: 16px; }
+
+  .step {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 26px;
+    margin-bottom: 24px;
+    border: 1px solid var(--line);
+  }
+  .step-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 6px; }
+  .step-num {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+  }
+  .step-title { font-size: 19px; font-weight: 700; color: var(--ink); }
+  .step-desc { color: var(--sub); font-size: 14px; margin: 4px 0 16px 48px; }
+  .step-body { margin-left: 48px; }
+  .step-body ul { list-style: none; margin-bottom: 8px; }
+  .step-body li { padding: 4px 0; font-size: 14px; }
+
+  .shot { margin: 14px 0; }
+  .shot-label {
+    font-size: 13px; color: var(--sub); margin-bottom: 8px; font-weight: 500;
+  }
+  .shot img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
+
+  .tip {
+    background: #FFF7E8; border-left: 4px solid var(--warn);
+    padding: 12px 16px; border-radius: 6px; font-size: 14px;
+    color: #7A5200; margin: 12px 0;
+  }
+  .tip b { color: #C97E00; }
+  .note {
+    background: #EFF6FF; border-left: 4px solid var(--blue);
+    padding: 12px 16px; border-radius: 6px; font-size: 14px;
+    color: #1F4FD8; margin: 12px 0;
+  }
+  .danger {
+    background: #FFF1F0; border-left: 4px solid #F53F3F;
+    padding: 12px 16px; border-radius: 6px; font-size: 14px;
+    color: #C91F1F; margin: 12px 0;
+  }
+
+  .precond { background: #fff; border-radius: 14px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--line); }
+  .precond h2 { font-size: 18px; margin-bottom: 12px; }
+  .precond ul { list-style: none; }
+  .precond li { padding: 8px 0 8px 28px; position: relative; font-size: 14px; color: var(--ink); border-bottom: 1px dashed var(--line); }
+  .precond li:last-child { border-bottom: none; }
+  .precond li::before { content: '✓'; position: absolute; left: 4px; color: var(--green); font-weight: 700; }
+
+  .done {
+    background: linear-gradient(135deg, #00B578, #00A870);
+    border-radius: 14px; padding: 30px; text-align: center; color: #fff; margin-bottom: 24px;
+  }
+  .done h2 { font-size: 20px; margin-bottom: 8px; }
+  .done p { font-size: 14px; opacity: .9; }
+
+  .faq { background: #fff; border-radius: 14px; padding: 24px; border: 1px solid var(--line); margin-bottom: 24px; }
+  .faq h2 { font-size: 18px; margin-bottom: 14px; }
+  .faq-item { margin-bottom: 16px; }
+  .faq-q { font-weight: 700; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
+  .faq-a { color: var(--sub); font-size: 14px; padding-left: 14px; }
+
+  .footer { text-align: center; color: #9AA1AC; font-size: 12px; padding: 20px 0; }
+
+  @media (max-width: 560px) {
+    .header h1 { font-size: 24px; }
+    .step-body, .step-desc { margin-left: 0; }
+    .step-title { font-size: 17px; }
+  }
+</style>
+</head>
+<body data-page-node-id="xFpDRLYfj2KZmXNoEdn1Lo">
+
+<div class="header" data-page-node-id="j36Hk63leFWv3nJUoKHGRj">
+  <span class="tag" data-page-node-id="Qz4wbeeP3LMFPE0FAOsLKt">WorkBuddy · 连接器演示</span>
+  <h1 data-page-node-id="ln3jTCTf71NHz0fq7JnLis">WorkBuddy 接入企业微信</h1>
+  <div class="sub" data-page-node-id="uAYEeKfG1PUaKlC56VROdI">把 AI 桌面智能体，装进你的企业微信</div>
+  <div class="badges" data-page-node-id="qhFcyCeWb5OckhDpsRj4ql">
+    <span class="badge" data-page-node-id="WfvDFIvLudX3VNSYK1IOsR">🔒 安全合规</span>
+    <span class="badge" data-page-node-id="fMUvbQRRrxSfW6l4DdFokW">⚡ 5 分钟完成</span>
+    <span class="badge" data-page-node-id="uGO2fC3rT4qQmE76ZIbeHo">🤖 零代码接入</span>
+  </div>
+</div>
+
+<div class="wrap" data-page-node-id="tv1tDEJuQHAhRqKLNlVpHh">
+
+  <div class="precond" data-page-node-id="485kraYlUxR1PS3lFL8Ehv">
+    <h2 data-page-node-id="cGWC3tTtXZiLW7wiMlW2Hc">▎前置条件</h2>
+    <ul data-page-node-id="8tGGGHyDAsof6Y1A8bleHw">
+      <li data-page-node-id="SJENGjq1Fp9MDSNyZgEgSv">电脑已安装 WorkBuddy，并开启 Claw 远程控制功能</li>
+      <li data-page-node-id="S5KbYNWiDCyszgtbmmGl0v">拥有一个可创建智能机器人的企业微信账号（无账号可参考「创建 &amp; 注册企业」新建）</li>
+    </ul>
+  </div>
+
+  <div class="overview" data-page-node-id="mEiCf43gvfJm6P49aqSWUu">
+    <h2 data-page-node-id="EhWD8BtbAQhr6XV3A8mi9v">▎接入流程总览（长连接模式 · 先建后绑）</h2>
+    <div class="steps-flow" data-page-node-id="O58fEF013xYW2HhEZBnUWS">
+      <span class="flow-step" data-page-node-id="9F6jjfYETQOQX7IAsGCXsg">企微入口</span><span class="flow-arrow" data-page-node-id="bTAFnKBuod8lFUupg8HcLe">→</span>
+      <span class="flow-step" data-page-node-id="3BhQCKAhlhCSQSYpO01dJZ">手动创建</span><span class="flow-arrow" data-page-node-id="FSohfClOugYEwbQ7YsDnuc">→</span>
+      <span class="flow-step" data-page-node-id="EsArE5RyIqU9kclx0qF72Q">API 模式</span><span class="flow-arrow" data-page-node-id="1od3iJPFrjBqxqHz15jlY0">→</span>
+      <span class="flow-step" data-page-node-id="Gr6WOmhsjVwh79zMCHFEiA">长连接配置</span><span class="flow-arrow" data-page-node-id="NO35IvK6TJA73LJ8MZZCXt">→</span>
+      <span class="flow-step" data-page-node-id="wVD9DXJeWOCnQB2soQvsSx">取凭据</span><span class="flow-arrow" data-page-node-id="9khQGkhYJgfNdD6haD5ENs">→</span>
+      <span class="flow-step" data-page-node-id="FtDKIE2ozSw8JlFmgw5GAG">WorkBuddy 绑定</span><span class="flow-arrow" data-page-node-id="NxwBWchfkR4bnulEeqBgbA">→</span>
+      <span class="flow-step" data-page-node-id="7MWDJUBUQ1SG4HrTHZTX9U">找到机器人</span><span class="flow-arrow" data-page-node-id="J7p8Naul5pWeo1DJFyD3eI">→</span>
+      <span class="flow-step" data-page-node-id="JtN3fBYnQ5AZqUXk7F2SaO">联通测试</span>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="tKVOnsGG20FNpJKJZQKkJE">
+    <div class="step-head" data-page-node-id="MaCXyIDMCGYiXXu15GxnC0">
+      <div class="step-num" data-page-node-id="F0Pb9UcJrEQIBbGUlEVOuX">1</div>
+      <div class="step-title" data-page-node-id="T1l8KxNLjPoo1kziPQn3ir">进入企微「智能机器人」</div>
+    </div>
+    <div class="step-desc" data-page-node-id="IikBwAKLXbQPeqHi2DKkuV">从工作台找到智能机器人应用入口</div>
+    <div class="step-body" data-page-node-id="mM8YiU0itDF3VyLXiCqBfM">
+      <ul data-page-node-id="vMrvs6Fy8Gdi8YcDs1VbzK">
+        <li data-page-node-id="eWQq16gHR8QrglRxQFC4t8">· ① 点击左侧「更多」</li>
+        <li data-page-node-id="Q328mR8CflEajpnXCweVSj">· ② 在应用列表中选「工作台」</li>
+        <li data-page-node-id="qAaAdCRp0G6cY0u3RJpCGV">· ③ 顶部搜索「智能机器人」并打开</li>
+        <li data-page-node-id="VkmaMGAQ1iUGUVbyguh6kb">· ④ 进入后点击「创建机器人」</li>
+      </ul>
+      <div class="shot" data-page-node-id="gHvgd8FMefFkaBFlhU5AfM">
+        <div class="shot-label" data-page-node-id="HMijVAa4dFikEfxCxEgBmJ">📷 截图 1：企微工作台 → 智能机器人 → 创建机器人</div>
+        <img src="screenshots/step1-wechat-entry.png" alt="步骤1：进入企微智能机器人" data-page-node-id="omGlMQA8Zc1SZSKJ1DACAz">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="xdM7vE9tGb44S6mKEBZqGX">
+    <div class="step-head" data-page-node-id="3dwHbCG9xlPNSuuJvRVsPX">
+      <div class="step-num" data-page-node-id="5cBNrzB7pJa0MQyVH0vtui">2</div>
+      <div class="step-title" data-page-node-id="6vw38AJdQsFvEDB0l2tUsz">选择「手动创建」</div>
+    </div>
+    <div class="step-desc" data-page-node-id="0Gp2aOmwG5iIf3W8A1Ce9C">在弹窗中跳过 AI 自动生成，选手动创建（便于精确配置）</div>
+    <div class="step-body" data-page-node-id="PSgFJbx5x0vBXXFkvANwBG">
+      <div class="note" data-page-node-id="JaHDD8g91cTuTp5WytSu8m">✅ 推荐使用「手动创建」，可精确控制机器人名称、可见范围和 API 模式；「AI 帮你自动生成」适合快速搭建场景化机器人。</div>
+      <ul data-page-node-id="Rbpb5JJXoEFbUhLC2BkgwF">
+        <li data-page-node-id="SeiCHYVFRGpSDAw5lyyP93">· 在「你需要一个什么样的机器人」弹窗中点击左下角「手动创建 &gt;」</li>
+      </ul>
+      <div class="shot" data-page-node-id="ASJ7j9jPMQaUh61B3E9pp1">
+        <div class="shot-label" data-page-node-id="0niSfVHfCL2ovxi7bqOTjl">📷 截图 2：「AI 帮你自动生成」弹窗 → 点击「手动创建」</div>
+        <img src="screenshots/step2-manual-create.png" alt="步骤2：选择手动创建" data-page-node-id="Ct1HHgHaKvf1sbE9BEeyK0">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="laXEP37Nvov4EwD8tmcEB9">
+    <div class="step-head" data-page-node-id="9FUHDLbvFdYjFraBwkwDZk">
+      <div class="step-num" data-page-node-id="bIGHepSZ87iABh1tRDqKZH">3</div>
+      <div class="step-title" data-page-node-id="vhdN7ANzMuqvgvD5PFtGyj">切换到「API 模式创建」</div>
+    </div>
+    <div class="step-desc" data-page-node-id="9eF5YWq4levEBEzcqAnsGF">把创建模式从普通模式切换到 API 模式</div>
+    <div class="step-body" data-page-node-id="7R0VfMzh2nOZifjy6htiFd">
+      <ul data-page-node-id="7IhyvAvgpYasqsaOqMtd5E">
+        <li data-page-node-id="8ipldnqCnuOpVaYiiUkjYv">· 在创建智能机器人页面右下角，点击「API 模式创建」</li>
+        <li data-page-node-id="m8aBQQF8H5Awu0eD2xqV3y">· 切换后，页面会显示「API 配置」区域，用于选择连接方式与凭据</li>
+      </ul>
+      <div class="tip" data-page-node-id="r7dgjrD1Pe8UVhQTRdwf67"><b data-page-node-id="L3lMIy6h3Iofa3Hdjj5NeF">提示：</b>API 模式暂不支持预览与测试，调试需到绑定 WorkBuddy 后通过企微聊天窗进行。</div>
+      <div class="shot" data-page-node-id="cXBDwgbARzc2rBw2U2Ch6s">
+        <div class="shot-label" data-page-node-id="QX3azYxeCG4SryMmB3vvPn">📷 截图 3：创建机器人页 → 点击「API 模式创建」</div>
+        <img src="screenshots/step3-api-mode.png" alt="步骤3：切换到 API 模式" data-page-node-id="e3vMeW8IxanI99wDQ0xMVu">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="0UFOyGAn3YuTDr55JjPk9o">
+    <div class="step-head" data-page-node-id="Td6T5VmPDMDLpXgXNbRBGC">
+      <div class="step-num" data-page-node-id="1ByhMiJmfJXoFN886H66OB">4</div>
+      <div class="step-title" data-page-node-id="M2wTOjrD4OxaZJVgDF57Ob">配置可见范围 + 选择长连接</div>
+    </div>
+    <div class="step-desc" data-page-node-id="MBTPOIHQCKn1Az3fVYRQtk">设置谁能使用这个机器人，并选择连接方式</div>
+    <div class="step-body" data-page-node-id="foQwpGnewpCCGQqffyUFn5">
+      <ul data-page-node-id="W4tzOoP3CWdJEi7qIF6sbe">
+        <li data-page-node-id="Dh5GBJrxsPzydo0ZMEh0WR">· 填写机器人名称（建议「WorkBuddy 助手」），上传头像</li>
+        <li data-page-node-id="MqF9aTdttmLthbOlZtXf1o">· 点击「修改」配置可见范围：选择可使用该机器人的成员、部门或标签</li>
+        <li data-page-node-id="yZLr12jG2ySVlhrnDDlMTZ">· 在「API 配置」区域，连接方式选择「<b data-page-node-id="JL98wCuXxw6fUJTZdSxg4y">使用长连接</b>」（推荐）</li>
+      </ul>
+      <div class="note" data-page-node-id="cAG8KG6jBOpAdJVWfiPK7d">✅ 长连接模式无需域名/IP，也不用回填 Webhook URL；URL 回调适合需要自有域名接收消息的场景。</div>
+      <div class="shot" data-page-node-id="vpEkH1umllCBYNzWMb3j77">
+        <div class="shot-label" data-page-node-id="K3J07EZ7Uxy0IlA5kKTzcM">📷 截图 4：API 配置页 → 修改可见范围 + 选「使用长连接」</div>
+        <img src="screenshots/step4-longconn-credentials.png" alt="步骤4：配置可见范围与长连接" data-page-node-id="Z26njM8YIruOL4uKz4G8WT">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="EzeCSgT1SAGA1O4lkCnY6D">
+    <div class="step-head" data-page-node-id="tHtmzhdRkieIdHQwTSLZ3V">
+      <div class="step-num" data-page-node-id="R6eiz18m25Ugjci6mx5AW9">5</div>
+      <div class="step-title" data-page-node-id="apmQCy0qdTfvJcEE55Z0S1">获取 Bot ID 与 Secret</div>
+    </div>
+    <div class="step-desc" data-page-node-id="LLw05F7eoFv8BeeOq55G2s">保存凭据，用于在 WorkBuddy 端绑定</div>
+    <div class="step-body" data-page-node-id="uTqq0h7TCE91IpoAVvVyLN">
+      <ul data-page-node-id="5eEhvKbRwciU8KlwS50F4R">
+        <li data-page-node-id="FK7M98KEkVdlgSGE5VzCYG">· <b data-page-node-id="CELcuLe69qdyIRE4pcWfLJ">Bot ID</b>：系统已自动生成，点击右侧图标复制</li>
+        <li data-page-node-id="Qhux59BY4wKrsZAeGx7slF">· <b data-page-node-id="xBIcjqw1Cw4tMCq6EsnlHq">Secret</b>：点击「点击获取」生成，复制保存（仅展示一次，关闭后需重新获取）</li>
+        <li data-page-node-id="mrHKtdBknqF2PQTZpO8HRM">· 底部点击「保存」完成机器人创建</li>
+      </ul>
+      <div class="danger" data-page-node-id="Cr8eNMA1hCk6lI0Kg6yKWW">⚠️ 注意：Secret 属敏感凭据，演示截图已做打码处理；外部客户演示时建议同步打码，避免泄露。</div>
+      <div class="shot" data-page-node-id="umxWClft3NlYXDdob2aH0D">
+        <div class="shot-label" data-page-node-id="GliaZBXl5TRHEr43wwJ9hD">📷 截图 5：Bot ID + Secret 配置区域</div>
+        <img src="screenshots/step5-bot-id-secret.png" alt="步骤5：获取 Bot ID 与 Secret" data-page-node-id="PWkD6ZoANdwaE5dZp4SRov">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="AlqmIcPSnGpq5c6GQlGRrn">
+    <div class="step-head" data-page-node-id="FdECaTUODbxBzUl78HydWs">
+      <div class="step-num" data-page-node-id="7HZ1LWFy0StEQxQsuKi0f7">6</div>
+      <div class="step-title" data-page-node-id="dRHecOMYCLjcJZt20pcgyf">打开 WorkBuddy「企微助理集成」</div>
+    </div>
+    <div class="step-desc" data-page-node-id="df3KsF8g9bXl31Lpj1VTF0">回到 WorkBuddy 客户端，找到企微集成入口</div>
+    <div class="step-body" data-page-node-id="VMBG35DjMMZLwiZva0qV5y">
+      <ul data-page-node-id="eLbSTeEbJCfeQa6hGhX0Z4">
+        <li data-page-node-id="KXMPNGENdEKQ0VkSe6u4gF">· 打开 WorkBuddy，进入「助理设置」</li>
+        <li data-page-node-id="LXFzO7ErEQXJOeayLzw65q">· 找到「企微助理集成」这一项</li>
+        <li data-page-node-id="8BZorzH8RDKjnQSommyRuS">· 点击右侧的「配置」按钮</li>
+      </ul>
+      <div class="shot" data-page-node-id="d0iZ7yTLdfqfbAYuUEbttk">
+        <div class="shot-label" data-page-node-id="xkHO4rNVOGhHujahMPi7AX">📷 截图 6：WorkBuddy「助理设置」→ 企微助理集成 → 点「配置」</div>
+        <img src="screenshots/step6-workbuddy-entry.png" alt="步骤6：WorkBuddy 端进入配置" data-page-node-id="Zmkl7kPWyhE6xm20d7mQrN">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="dXO5AVRA59EC4TxAXBZhAc">
+    <div class="step-head" data-page-node-id="i9xWQY3b1hRXSBDnkiUQzk">
+      <div class="step-num" data-page-node-id="BtMEBZdqBTI4Dh219ODwho">7</div>
+      <div class="step-title" data-page-node-id="VdPmrkBJrHZgRwW00zO52H">WorkBuddy 完成注册绑定</div>
+    </div>
+    <div class="step-desc" data-page-node-id="fXau99X44tsw6CDW4DIZVn">选择长连接 + 快捷绑定接入</div>
+    <div class="step-body" data-page-node-id="OhEN507lMRfqxIP4GQERB9">
+      <ul data-page-node-id="wqtcko3qccZtoZJL9HA8Za">
+        <li data-page-node-id="qGC1wCAkaw4IGDOLsoRGDv">· 在「注册企微助理通道」弹窗中选择「WebSocket 长连接」</li>
+        <li data-page-node-id="ahS0PLqOKkO983BCIGyzUN">· 点击「快捷绑定接入」（最简方式，无需手动填凭据）</li>
+        <li data-page-node-id="XH6weM3UPXellNZIXmKU3j">· 扫码授权后，点击「注册」完成绑定，集成状态变为「已连接」</li>
+      </ul>
+      <div class="note" data-page-node-id="ungFVQuEq5q07Eo31kH1XX">✅ 若快捷绑定失败，可手动填入上一步获取的 Bot ID 与 Secret 完成绑定。</div>
+      <div class="shot" data-page-node-id="S0TUbPwPErIYgmFLoT9zOZ">
+        <div class="shot-label" data-page-node-id="pfV9xS3LVSLeV1HPSdamBS">📷 截图 7：WorkBuddy 注册企微助理通道弹窗（WebSocket 长连接 + 快捷绑定接入）</div>
+        <img src="screenshots/step7-workbuddy-register.png" alt="步骤7：WorkBuddy 端注册绑定" data-page-node-id="D4ofUVgwcBi8pYm4V63S4m">
+      </div>
+    </div>
+  </div>
+
+  <div class="step" data-page-node-id="3WEnLrB9WV1J8G7drA1hpJ">
+    <div class="step-head" data-page-node-id="5ZNFc7fGX2Xx0sW0Di6bGV">
+      <div class="step-num" data-page-node-id="CimnJxDfXPo3evhElig4dH">8</div>
+      <div class="step-title" data-page-node-id="q11UYJKpgkFDmFpnieDayz">联通测试</div>
+    </div>
+    <div class="step-desc" data-page-node-id="ta2nWO8815znu6FnOC4REC">在企微通讯录中找到机器人，发消息验证打通</div>
+    <div class="step-body" data-page-node-id="aC6qtmWEojomSTxT9i9a7Z">
+      <ul data-page-node-id="LfjmJHftBRUJSTBEVLzOyZ">
+        <li data-page-node-id="pf0wBNWQwExgUYivHhjX4v">· 在企微左侧「通讯录」下找到「智能机器人 → 企业创建的 → WorkBuddy Bot」</li>
+        <li data-page-node-id="FrSKNCV2bHG6suWNtRxkv7">· 点击右侧「发消息」</li>
+        <li data-page-node-id="FuJ1PCjQ2xBbNK82KwUdFp">· 发送一条简单消息（如「你好」），WorkBuddy 收到后返回回复 = 对接成功</li>
+      </ul>
+      <div class="shot" data-page-node-id="1YfgKWFxk8dyUJhXHz7AFN">
+        <div class="shot-label" data-page-node-id="zjSowYuF2XUU2sdfvFYyxc">📷 截图 8：企微通讯录中找到 WorkBuddy BOT，点「发消息」</div>
+        <img src="screenshots/step8-find-bot.png" alt="步骤8：找到机器人并发起对话" data-page-node-id="WIvl93igj2ijuZr5CcAvxd">
+      </div>
+    </div>
+  </div>
+
+  <div class="done" data-page-node-id="XU2heg0DYBwxT3Pcv2UGA0">
+    <h2 data-page-node-id="JRZLRh82AcJ3Jd8oyzdKxB">✅ 企微接入完成！</h2>
+    <p data-page-node-id="DxNDgGv20uWTxbdKNlwL0H">现在你可以在企业微信中直接给 WorkBuddy 发任务了</p>
+  </div>
+
+  <div class="faq" data-page-node-id="6X6OKRJcyofyTcTwWaDXQd">
+    <h2 data-page-node-id="505WV7CzJAjdAmheTpanNI">▎常见问题</h2>
+    <div class="faq-item" data-page-node-id="V07dA3HYNfKqF3bef16D98">
+      <div class="faq-q" data-page-node-id="FJoLtkk2gHXEwWrTz0MJNc">Q1：机器人没有响应？</div>
+      <div class="faq-a" data-page-node-id="K8vKBmc31EDqFuZx6co5ly">检查 WorkBuddy 是否正在运行、Claw 服务是否开启；核对企微侧连接方式（长连接 vs URL 回调）与 WorkBuddy 端是否一致；长连接核对 Bot ID 和 Secret。</div>
+    </div>
+    <div class="faq-item" data-page-node-id="zZAbMpekYOuM29vM26IPOW">
+      <div class="faq-q" data-page-node-id="DGPTv9YpyennezhTMkxnwk">Q2：长连接注册失败？</div>
+      <div class="faq-a" data-page-node-id="3RbY9QCQjihzj97PszizwX">确认企微侧已选择「使用长连接」；重新复制 Bot ID 和 Secret，避免带入多余空格；若 Secret 已失效，在企微后台重新获取后再次注册。</div>
+    </div>
+    <div class="faq-item" data-page-node-id="UXndRGYl47lXCvm7JXCydS">
+      <div class="faq-q" data-page-node-id="7jXXnsYYcPHqllyStuGcCK">Q3：长连接与 URL 回调该选哪个？</div>
+      <div class="faq-a" data-page-node-id="VTluJsxsumfOZOARx9hOEx">推荐优先使用「WebSocket 长连接」，配置步骤更少、无需部署 IP 和回填 Webhook URL；URL 回调适合需要自有域名接收消息的场景。</div>
+    </div>
+    <div class="faq-item" data-page-node-id="i9oEuCsqITLdRhlT8sbueh">
+      <div class="faq-q" data-page-node-id="RwOBCj6zwzhKzLmPRyEywF">Q4：可见范围设置后部分成员无法使用？</div>
+      <div class="faq-a" data-page-node-id="XvGSmp5LenP3n3VBkZdiBj">在企微「智能机器人 → 管理」中检查可见范围配置；确认所选成员、部门或标签已正确添加；修改后需让成员退出原会话并重新发起对话。</div>
+    </div>
+  </div>
+
+  <div class="footer" data-page-node-id="jQrcOWRYRfPUvCD1i169Ov">WorkBuddy 接入企业微信 · 操作演示</div>
+
+</div>
+</body>
+</html>

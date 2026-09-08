@@ -711,7 +711,7 @@ img { display:block; max-width:100%; }
   <nav class="sidebar" id="sidebar">
     <div class="nav-group">
       <div class="nav-item" data-nav="cover" onclick="showView('cover')"><span class="no">▣</span>封面</div>
-      <div class="nav-item" data-nav="toc" onclick="showView('toc')"><span class="no">▤</span>目 录<span class="cnt">4</span></div>
+      <div class="nav-item" data-nav="toc" onclick="showView('toc')"><span class="no">▤</span>目 录<span class="cnt">5</span></div>
       <div class="nav-item" data-nav="base" onclick="showView('base')"><span class="no">01</span>WorkBuddy 是什么</div>
       <div class="nav-item" data-nav="core" onclick="showView('core')"><span class="no">02</span>通用核心功能<span class="cnt">3</span></div>
       <div class="nav-item" data-nav="scenes" onclick="showView('scenes')"><span class="no">03</span>应用场景<span class="cnt">15</span></div>
@@ -719,6 +719,7 @@ img { display:block; max-width:100%; }
     <div class="nav-group" id="navCats"></div>
     <div class="nav-group">
       <div class="nav-item" data-nav="skill" onclick="showView('skill')"><span class="no">04</span>Skill 介绍</div>
+      <div class="nav-item" data-nav="wecom" onclick="showView('wecom')"><span class="no">05</span>企业微信接入</div>
     </div>
   </nav>
 
@@ -912,6 +913,34 @@ img { display:block; max-width:100%; }
         <h3><span class="bn">◆</span>精选技能市场</h3>
         <img class="doc-img" src="img/skill-market-full.png" alt="WorkBuddy 精选技能市场" onclick="goDemoScene('d_market')">
         <div class="doc-img-cap">↑ 精选技能市场：开箱即用、一键安装（点击查看大图）</div>
+      </div>
+    </div>
+
+    <!-- ===== 视图：企业微信接入 ===== -->
+    <div class="view" id="viewWecom">
+      <div class="doc-head">
+        <div class="doc-kicker">SECTION 05</div>
+        <div class="doc-title">企业微信接入</div>
+        <div class="doc-lead">把 WorkBuddy 装进企业微信——通过「智能机器人 + 长连接」打通，直接在企微聊天窗里给 WorkBuddy 派活，处理结果一键发回群聊或单聊。</div>
+      </div>
+      <div class="doc-block">
+        <h3><span class="bn">?</span>接入企业微信，能做什么？</h3>
+        <p>接入之后，WorkBuddy 不再只是电脑上一个孤立的助手，而是<b>「住进企业微信里的 AI 助理」</b>——同事在群里 @ 它、单聊找它，就能直接发任务：</p>
+        <ul>
+          <li>在企微聊天窗直接下发任务，WorkBuddy 在电脑端接手执行；</li>
+          <li>处理结果（文档、周报、数据看板等）一键发回企微群或单聊；</li>
+          <li>团队共享同一个 WorkBuddy，无需每个人单独配置。</li>
+        </ul>
+        <h3 style="margin-top:24px"><span class="bn">①</span>怎么接入？</h3>
+        <p>整体只有「<b>先建后绑</b>」一步主线：在企业微信里创建一个<b>智能机器人</b>，再到 WorkBuddy 里把它<b>绑定</b>上即可，全程约 8 个步骤、几分钟搞定。推荐使用<b>「使用长连接」</b>模式，无需域名、无需回填 Webhook，配置最省事。</p>
+        <p>下面是完整的操作指南（含每一步截图），可直接照着做：</p>
+      </div>
+      <div class="doc-block">
+        <h3><span class="bn">▸</span>操作指南（可交互）</h3>
+        <div class="stage-wrap">
+          <iframe class="stage-frame" src="demos/d_wecom/index.html" scrolling="auto" style="width:100%;height:78vh;border:1px solid #d0d8ec;border-radius:12px;background:#fff;"></iframe>
+        </div>
+        <p style="margin-top:10px;font-size:13px;color:#646A73;">↑ 内嵌《WorkBuddy 接入企业微信 · 操作演示》，如需新窗口查看可 <a href="https://srworkbuddy.github.io/WeCom/" target="_blank" rel="noopener"><b>↗ 打开在线版</b></a>。</p>
       </div>
     </div>
 
@@ -1175,7 +1204,7 @@ function updateNav(view, idx){
 
 /* ---------- 视图切换 ---------- */
 function showView(view, arg){
-  var views = ['viewCover','viewBase','viewCore','viewToc','viewScenes','viewScene','viewSceneDemo','viewSkill'];
+  var views = ['viewCover','viewBase','viewCore','viewToc','viewScenes','viewScene','viewSceneDemo','viewSkill','viewWecom'];
   for (var i = 0; i < views.length; i++) $(views[i]).className = 'view' + (views[i] === 'viewCover' ? ' view-cover' : '');
   if (view === 'cover') $('viewCover').className = 'view view-cover show';
   else if (view === 'base') $('viewBase').className = 'view show';
@@ -1185,6 +1214,7 @@ function showView(view, arg){
   else if (view === 'scene'){ renderScene(arg); $('viewScene').className = 'view show'; }
   else if (view === 'sceneDemo'){ renderSceneDemo(arg); $('viewSceneDemo').className = 'view show'; }
   else if (view === 'skill') $('viewSkill').className = 'view show';
+  else if (view === 'wecom') $('viewWecom').className = 'view show';
   updateNav(view, arg);
   if (location.hash !== view && view !== 'scene' && view !== 'sceneDemo') location.hash = view;
   window.scrollTo(0, 0);
@@ -1207,7 +1237,7 @@ function routeFromHash(){
     var n = parseInt(h.substring(1), 10);
     if (n >= 0 && n < SCENES.length){ showView('scene', n); return; }
   }
-  if (h === 'toc' || h === 'scenes' || h === 'skill' || h === 'base' || h === 'core' || h === 'cover'){ showView(h); return; }
+  if (h === 'toc' || h === 'scenes' || h === 'skill' || h === 'wecom' || h === 'base' || h === 'core' || h === 'cover'){ showView(h); return; }
   showView('cover');
 }
 window.onhashchange = routeFromHash;
@@ -1221,11 +1251,11 @@ function renderToc(){
         +     '<div class="tocv2-head-l">'
         +       '<div class="doc-kicker">CONTENTS</div>'
         +       '<div class="doc-title">目 录</div>'
-        +       '<div class="doc-lead">本份材料共四个章节——先认识 WorkBuddy、看懂它的三层核心能力，再逐一浏览 15 个应用场景，最后了解让 WorkBuddy 越来越"懂你"的 Skill 机制。</div>'
+        +       '<div class="doc-lead">本份材料共五个章节——先认识 WorkBuddy、看懂它的三层核心能力，再逐一浏览 15 个应用场景，了解让 WorkBuddy 越来越"懂你"的 Skill 机制，最后学会把它接入企业微信。</div>'
         +     '</div>'
         +     '<div class="tocv2-head-r">'
         +       '<div class="label">CHAPTERS</div>'
-        +       '<div class="big">04</div>'
+        +       '<div class="big">05</div>'
         +     '</div>'
         +   '</div>'
         +   '<ul class="tocv2-list">'
@@ -1257,11 +1287,18 @@ function renderToc(){
         +         '<div class="tocv2-right"><span class="tocv2-badge">专属章节</span><span class="tocv2-hint">3 个核心问题 <span class="tocv2-arrow">→</span></span></div>'
         +       '</div>'
         +     '</li>'
+        +     '<li onclick="showView(\'wecom\')">'
+        +       '<div class="tocv2-row">'
+        +         '<div class="tocv2-no">05</div>'
+        +         '<div class="tocv2-mid"><div class="tocv2-name">企业微信接入</div><div class="tocv2-desc">怎么接入企业微信 · 8 步操作指南（含截图）</div></div>'
+        +         '<div class="tocv2-right"><span class="tocv2-badge">接入指南</span><span class="tocv2-hint">8 步上手 <span class="tocv2-arrow">→</span></span></div>'
+        +       '</div>'
+        +     '</li>'
         +   '</ul>'
         +   '<div class="tocv2-foot">'
         +     '<span>鄂尔多斯 · 研发场景应用分享</span>'
-        +     '<div class="tocv2-dots"><i class="on"></i><i></i><i></i><i></i></div>'
-        +     '<span>4 CHAPTERS · 15 SCENES</span>'
+        +     '<div class="tocv2-dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>'
+        +     '<span>5 CHAPTERS · 15 SCENES</span>'
         +   '</div>'
         + '</div>';
   $('viewToc').innerHTML = h;
